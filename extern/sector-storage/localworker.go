@@ -13,7 +13,7 @@ import (
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 	"github.com/filecoin-project/specs-actors/actors/abi"
-	storage2 "github.com/filecoin-project/specs-storage/storage"
+	storage2 "github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/lotus/extern/sector-storage/sealtasks"

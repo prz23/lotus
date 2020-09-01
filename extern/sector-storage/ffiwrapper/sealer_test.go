@@ -23,7 +23,7 @@ import (
 
 	paramfetch "github.com/filecoin-project/go-paramfetch"
 	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 

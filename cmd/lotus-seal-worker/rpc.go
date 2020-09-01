@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/build"
 	sectorstorage "github.com/filecoin-project/lotus/extern/sector-storage"

@@ -24,7 +24,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-fil-markets/storagemarket/impl/storedask"
 
-	storage2 "github.com/filecoin-project/specs-storage/storage"
+	storage2 "github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain"

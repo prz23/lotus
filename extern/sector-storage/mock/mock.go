@@ -11,7 +11,7 @@ import (
 
 	commcid "github.com/filecoin-project/go-fil-commcid"
 	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log"
 	"golang.org/x/xerrors"
