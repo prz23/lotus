@@ -112,6 +112,10 @@ var initCmd = &cli.Command{
 			Name:  "from",
 			Usage: "select which address to send actor creation message from",
 		},
+		&cli.StringFlag{
+			Name:  "miner-address-fake",
+			Usage: "",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		log.Info("Initializing lotus miner")
@@ -517,6 +521,14 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		}
 
 		addr = a
+	}
+
+	if act := cctx.String("miner-address-fake"); act != "" {
+		addr, err = address.NewFromString(act)
+		if err != nil{
+			return nil
+		}
+		log.Infof("miner-address-fake: %s", addr)
 	}
 
 	log.Infof("Created new miner: %s", addr)

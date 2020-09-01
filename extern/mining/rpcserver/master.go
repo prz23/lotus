@@ -1,13 +1,13 @@
 package umrpc
 
 import (
-	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
-	state "github.com/filecoin-project/lotus/extern/miningstate/rpcsectorstate"
-	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
 	"context"
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
+	state "github.com/filecoin-project/lotus/extern/miningstate/rpcsectorstate"
+	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
 	"github.com/filecoin-project/lotus/node/modules/dtypes"
 	sectorstorage "github.com/filecoin-project/sector-storage"
 	"go.uber.org/fx"
@@ -25,17 +25,17 @@ type WindowPoSt struct {
 
 func (sb *WindowPoSt) DoVanillaProof(req rpcclient.WindowPoStRequest, res *rpcclient.WindowPoStResponse) error {
 
-	fn := func(all []rpcclient.SectorIdIndex) []uint64{
-		s := make([]uint64,1,1)
-		for _,each := range all {
-			s = append(s,each.PrzIndex)
-		}
-		return s
-	}
+	//fn := func(all []rpcclient.SectorIdIndex) []uint64{
+	//	s := make([]uint64,1,1)
+	//	for _,each := range all {
+	//		s = append(s,each.PrzIndex)
+	//	}
+	//	return s
+	//}
 
 
-	res.VanillaProof,_,_ = sb.sealer.GenerateWindowPoStVanilla(context.Background(),req.MinerID,req.SectorInfo,req.Randomness,fn(req.Index))
-	res.Index = req.Index
+	//res.VanillaProof,_,_ = sb.sealer.GenerateWindowPoStVanilla(context.Background(),req.MinerID,req.SectorInfo,req.Randomness,fn(req.Index))
+	//res.Index = req.Index
 	return nil
 }
 
@@ -96,17 +96,13 @@ func (s *MinerAddress)GetAddress(req rpcclient.MinerAddressReq, res *rpcclient.M
 }
 
 
-
-
-type UmIP = string
-
 func NewStartMasterRpc(lc fx.Lifecycle, localIpAddress rpctypes.LocalServerAddr,
 	sealer sectorstorage.SectorManager, api api.FullNode, maddr dtypes.MinerAddress) error {
 
 	rpcclient.Log.Info("==================================================")
 	rpcclient.Log.Info("[NewStartMasterRpc] localIpAddress is ",localIpAddress)
 	rpcclient.Log.Info("==================================================")
-	rpcclient.Log.Info("[NewStartMasterRpc] Seal is ",sealer)
+	rpcclient.Log.Info("[NewStartMasterRpc] MinerAddress is ",maddr)
 
 	newServer := rpc.NewServer()
 
@@ -156,7 +152,3 @@ func NewStartMasterRpc(lc fx.Lifecycle, localIpAddress rpctypes.LocalServerAddr,
 	return nil
 }
 
-//
-func NewUmIP() UmIP{
-	return "0.0.0.0:5959"
-}

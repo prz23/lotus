@@ -44,3 +44,11 @@ func (sc *StoredCounter) Next() (uint64, error) {
 
 	return next, sc.ds.Put(sc.name, buf[:size])
 }
+
+func (sc *StoredCounter) Offset(offset uint64) error{
+
+	buf := make([]byte, binary.MaxVarintLen64)
+	size := binary.PutUvarint(buf, offset)
+
+	return sc.ds.Put(sc.name, buf[:size])
+}

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	"time"
 
 	"github.com/ipfs/go-cid"
@@ -88,7 +89,13 @@ type storageMinerApi interface {
 	WalletHas(context.Context, address.Address) (bool, error)
 }
 
-func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig) (*Miner, error) {
+func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig, offset rpcclient.Offset) (*Miner, error) {
+	err := sc.Offset(uint64(offset))
+	if err != nil {
+		log.Info("err set offset ")
+	}else {
+		log.Info("[NewMiner] SectorCount Offset Set to",uint64(offset))
+	}
 	m := &Miner{
 		api:    api,
 		feeCfg: feeCfg,

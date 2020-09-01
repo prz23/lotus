@@ -185,6 +185,7 @@ func (t *SectorInfo) keepUnsealedRanges(invert bool) []storage.Range {
 
 type SectorIDCounter interface {
 	Next() (abi.SectorNumber, error)
+	Offset(offset uint64) error
 }
 
 type TipSetToken []byte

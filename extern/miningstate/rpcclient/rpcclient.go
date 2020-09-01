@@ -1,11 +1,11 @@
 package rpcclient
 
 import (
-	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
+	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
 	"github.com/filecoin-project/lotus/node/modules/dtypes"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/ipfs/go-datastore"
