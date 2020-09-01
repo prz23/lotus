@@ -6,9 +6,7 @@ import (
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
-	"github.com/filecoin-project/lotus/node/modules/dtypes"
 	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/ipfs/go-datastore"
 	logging "github.com/ipfs/go-log/v2"
 	"net/rpc"
 )
@@ -158,60 +156,60 @@ type MindrAddressRes struct {
 }
 
 // not used
-func RpcCallMinerAddress(role rpctypes.Role, ds dtypes.MetadataDS,addr dtypes.MinerAddressIntermediate) dtypes.MinerAddress {
-
-	if role == rpctypes.Role_Master {
-		Log.Info("Master return loacl MinerAddress")
-		return dtypes.MinerAddress(addr)
-	}
-
-	req := MinerAddressReq{}
-	method := "MinerAddress.GetAddress"
-
-	conn, err := rpc.DialHTTP("tcp", MasterIP)
-	if err != nil {
-		fmt.Println("dailing error: ", err)
-	}
-
-	var res MindrAddressRes
-
-	err = conn.Call(method, req, &res)
-	if err != nil {
-		fmt.Println("WindowPoSt error: ", err)
-	}
-
-
-	// ReSaveTheAddress
-	if err := ds.Put(datastore.NewKey("miner-address"), res.Maddr.Bytes()); err != nil {
-		return dtypes.MinerAddress(address.Undef)
-	}
-
-	return dtypes.MinerAddress(res.Maddr)
-}
-
-// used in miner init!!!!!!! ip and role required
-func RpcCallMinerAddressInit(role rpctypes.Role,ip string) address.Address {
-
-	if role == rpctypes.Role_Master {
-		Log.Info("Master return loacl MinerAddress")
-		return address.Undef
-	}
-
-	req := MinerAddressReq{}
-	method := "MinerAddress.GetAddress"
-
-	conn, err := rpc.DialHTTP("tcp", ip)
-	if err != nil {
-		fmt.Println("dailing error: ", err)
-	}
-
-	var res MindrAddressRes
-
-	err = conn.Call(method, req, &res)
-	if err != nil {
-		fmt.Println("addr error: ", err)
-	}
-
-	Log.Info("Get Maddr From Master =",res.Maddr)
-	return res.Maddr
-}
+//func RpcCallMinerAddress(role rpctypes.Role, ds dtypes.MetadataDS,addr dtypes.MinerAddressIntermediate) dtypes.MinerAddress {
+//
+//	if role == rpctypes.Role_Master {
+//		Log.Info("Master return loacl MinerAddress")
+//		return dtypes.MinerAddress(addr)
+//	}
+//
+//	req := MinerAddressReq{}
+//	method := "MinerAddress.GetAddress"
+//
+//	conn, err := rpc.DialHTTP("tcp", MasterIP)
+//	if err != nil {
+//		fmt.Println("dailing error: ", err)
+//	}
+//
+//	var res MindrAddressRes
+//
+//	err = conn.Call(method, req, &res)
+//	if err != nil {
+//		fmt.Println("WindowPoSt error: ", err)
+//	}
+//
+//
+//	// ReSaveTheAddress
+//	if err := ds.Put(datastore.NewKey("miner-address"), res.Maddr.Bytes()); err != nil {
+//		return dtypes.MinerAddress(address.Undef)
+//	}
+//
+//	return dtypes.MinerAddress(res.Maddr)
+//}
+//
+//// used in miner init!!!!!!! ip and role required
+//func RpcCallMinerAddressInit(role rpctypes.Role,ip string) address.Address {
+//
+//	if role == rpctypes.Role_Master {
+//		Log.Info("Master return loacl MinerAddress")
+//		return address.Undef
+//	}
+//
+//	req := MinerAddressReq{}
+//	method := "MinerAddress.GetAddress"
+//
+//	conn, err := rpc.DialHTTP("tcp", ip)
+//	if err != nil {
+//		fmt.Println("dailing error: ", err)
+//	}
+//
+//	var res MindrAddressRes
+//
+//	err = conn.Call(method, req, &res)
+//	if err != nil {
+//		fmt.Println("addr error: ", err)
+//	}
+//
+//	Log.Info("Get Maddr From Master =",res.Maddr)
+//	return res.Maddr
+//}
