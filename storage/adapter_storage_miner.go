@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
@@ -259,7 +260,7 @@ func (s SealingAPIAdapter) StateMarketStorageDeal(ctx context.Context, dealID ab
 	return deal.Proposal, nil
 }
 
-func (s SealingAPIAdapter) SendMsg(ctx context.Context, from, to address.Address, method abi.MethodNum, value, maxFee abi.TokenAmount, params []byte) (cid.Cid, error) {
+func (s SealingAPIAdapter) SendMsg(ctx context.Context, from, to address.Address, method abi.MethodNum, value, maxFee abi.TokenAmount, params []byte, secnum abi.SectorNumber) (cid.Cid, error) {
 	msg := types.Message{
 		To:     to,
 		From:   from,
@@ -268,7 +269,10 @@ func (s SealingAPIAdapter) SendMsg(ctx context.Context, from, to address.Address
 		Params: params,
 	}
 
-	smsg, err := s.delegate.MpoolPushMessage(ctx, &msg, &api.MessageSendSpec{MaxFee: maxFee})
+	//smsg, err := s.delegate.MpoolPushMessage(ctx, &msg, &api.MessageSendSpec{MaxFee: maxFee})
+	res,err := rpcclient.RpcCallCommit(rpcclient.CommitReq{msg,
+		api.MessageSendSpec{MaxFee: maxFee},uint64(secnum),""})
+	smsg := res.Smsg
 	if err != nil {
 		return cid.Undef, err
 	}
