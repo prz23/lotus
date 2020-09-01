@@ -90,11 +90,15 @@ type storageMinerApi interface {
 }
 
 func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig, offset rpcclient.Offset) (*Miner, error) {
-	err := sc.Offset(uint64(offset))
-	if err != nil {
-		log.Info("err set offset ")
+	if uint64(offset) == 0 {
+		log.Info("Already Registered, use stored SectorCounter")
 	}else {
-		log.Info("[NewMiner] SectorCount Offset Set to",uint64(offset))
+		err := sc.Offset(uint64(offset))
+		if err != nil {
+			log.Info("Err set offset ")
+		}else {
+			log.Info("[NewMiner] SectorCount Offset Set to",uint64(offset))
+		}
 	}
 	m := &Miner{
 		api:    api,
