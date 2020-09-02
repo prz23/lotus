@@ -1,15 +1,18 @@
 package umrpc
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
+	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	state "github.com/filecoin-project/lotus/extern/miningstate/rpcsectorstate"
 	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
+	sectorstorage "github.com/filecoin-project/lotus/extern/sector-storage"
 	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	sectorstorage "github.com/filecoin-project/sector-storage"
+	"github.com/filecoin-project/specs-actors/actors/abi"
 	"go.uber.org/fx"
 	"log"
 	"net"
@@ -75,13 +78,33 @@ type Commit struct {
 }
 
 func (s *Commit)PushMsg(req rpcclient.CommitReq, res *rpcclient.CommitRes) error{
-	smsg,err := s.api.MpoolPushMessage(context.Background(),&req.Msg,&req.Spec)
-	if err != nil {
-		res.Smsg = *smsg
-		getIns := GetIns()
-		getIns.Insert(req.SectorId,req.SlaveIp)
+	rpcclient.Log.Info("==========PushMsg==1=============")
+
+	var v types.Message
+	if err := v.UnmarshalCBOR(bytes.NewBuffer(req.Msg)); err != nil {
+		return err
 	}
-	return err
+
+	var v2 abi.TokenAmount
+	if err := v2.UnmarshalCBOR(bytes.NewBuffer(req.Spec)); err != nil {
+		return err
+	}
+
+	smsg,err := s.api.MpoolPushMessage(context.Background(),&v,&api.MessageSendSpec{MaxFee: v2})
+	if err != nil {
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	if err := smsg.MarshalCBOR(buf); err != nil {
+		return err
+	}
+
+	res.Smsg = buf.Bytes()
+	getIns := GetIns()
+	getIns.Insert(req.SectorId,req.SlaveIp)
+
+	return nil
 }
 
 

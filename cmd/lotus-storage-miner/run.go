@@ -98,7 +98,7 @@ var runCmd = &cli.Command{
 			if RoleRpc == "Master"{
 				Role = rpctypes.Role_Master
 				RpcAddressForLocal = rpctypes.LocalServerAddr(cctx.String("rpc-address-local"))
-				RpcAddressForUM = ""
+				RpcAddressForUM = rpctypes.RemoteServerAddr(cctx.String("rpc-address-ma"))
 				log.Info("###########[Master]############Local=",RpcAddressForLocal)
 			}else if RoleRpc == "Slave"{
 				Role = rpctypes.Role_Slave

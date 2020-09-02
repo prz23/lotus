@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
-
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
@@ -18,7 +17,6 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/crypto"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/apibstore"
 	"github.com/filecoin-project/lotus/build"
 	"github.com/filecoin-project/lotus/chain/actors"
@@ -269,15 +267,29 @@ func (s SealingAPIAdapter) SendMsg(ctx context.Context, from, to address.Address
 		Params: params,
 	}
 
+	buf := new(bytes.Buffer)
+	if err := msg.MarshalCBOR(buf); err != nil {
+		return cid.Undef, err
+	}
+
+	buf2 := new(bytes.Buffer)
+	if err := maxFee.MarshalCBOR(buf2); err != nil {
+		return cid.Undef, err
+	}
+
 	//smsg, err := s.delegate.MpoolPushMessage(ctx, &msg, &api.MessageSendSpec{MaxFee: maxFee})
-	res,err := rpcclient.RpcCallCommit(rpcclient.CommitReq{msg,
-		api.MessageSendSpec{MaxFee: maxFee},uint64(secnum),""})
-	smsg := res.Smsg
+	res,err := rpcclient.RpcCallCommit(rpcclient.CommitReq{buf.Bytes(),
+		buf2.Bytes(),uint64(secnum),""})
 	if err != nil {
 		return cid.Undef, err
 	}
 
-	return smsg.Cid(), nil
+	var v types.SignedMessage
+	if err = v.UnmarshalCBOR(bytes.NewBuffer(res.Smsg)); err != nil {
+		return cid.Undef, err
+	}
+
+	return v.Cid(), nil
 }
 
 func (s SealingAPIAdapter) ChainHead(ctx context.Context) (sealing.TipSetToken, abi.ChainEpoch, error) {

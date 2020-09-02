@@ -3,8 +3,6 @@ package rpcclient
 import (
 	"fmt"
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/chain/types"
 	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	logging "github.com/ipfs/go-log/v2"
@@ -107,13 +105,13 @@ func getindex(a []SectorIdIndex) []uint64 {
 
 //Commit
 type CommitReq struct {
-	Msg      types.Message
-	Spec     api.MessageSendSpec
+	Msg      [] byte /*types.Message*/
+	Spec     [] byte /*api.MessageSendSpec*/
 	SectorId uint64
 	SlaveIp  string
 }
 type CommitRes struct {
-	Smsg types.SignedMessage
+	Smsg [] byte /*types.SignedMessage*/
 }
 
 func RpcCallCommit(req CommitReq) (CommitRes,error) {
