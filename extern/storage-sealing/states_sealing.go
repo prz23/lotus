@@ -20,6 +20,7 @@ var DealSectorPriority = 1024
 
 func (m *Sealing) handlePacking(ctx statemachine.Context, sector SectorInfo) error {
 	log.Infow("performing filling up rest of the sector...", "sector", sector.SectorNumber)
+    log.Info("handlePacking minerId [maddr] is ",m.maddr.String())
 
 	var allocated abi.UnpaddedPieceSize
 	for _, piece := range sector.Pieces {
@@ -210,7 +211,7 @@ func (m *Sealing) handlePreCommitting(ctx statemachine.Context, sector SectorInf
 	deposit := big.Max(depositMinimum, collateral)
 
 	log.Infof("submitting precommit for sector %d (deposit: %s): ", sector.SectorNumber, deposit)
-	mcid, err := m.api.SendMsg(ctx.Context(), waddr, m.maddr, builtin.MethodsMiner.PreCommitSector, deposit, m.feeCfg.MaxPreCommitGasFee, enc.Bytes(), sector.SectorNumber)
+	mcid, err := m.api.SendMsg(ctx.Context(), waddr, m.maddr, builtin.MethodsMiner.PreCommitSector, deposit, m.feeCfg.MaxPreCommitGasFee, enc.Bytes(), abi.SectorNumber(0))
 	if err != nil {
 		if params.ReplaceCapacity {
 			m.remarkForUpgrade(params.ReplaceSectorNumber)
@@ -396,6 +397,8 @@ func (m *Sealing) handleSubmitCommit(ctx statemachine.Context, sector SectorInfo
 		return ctx.Send(SectorCommitFailed{xerrors.Errorf("pushing message to mpool: %w", err)})
 	}
 
+	// Record Sectors
+	_ = m.sr.Insert(uint64(sector.SectorNumber))
 	return ctx.Send(SectorCommitSubmitted{
 		Message: mcid,
 	})

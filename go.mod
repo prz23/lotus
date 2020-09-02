@@ -15,6 +15,7 @@ require (
 	github.com/buger/goterm v0.0.0-20200322175922-2f3e71b85129
 	github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
+	github.com/deckarep/golang-set v1.7.1
 	github.com/detailyang/go-fallocate v0.0.0-20180908115635-432fa640bd2e
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/docker/go-units v0.4.0
@@ -37,8 +38,7 @@ require (
 	github.com/filecoin-project/go-paramfetch v0.0.2-0.20200701152213-3e0f0afdc261
 	github.com/filecoin-project/go-statemachine v0.0.0-20200813232949-df9b130df370
 	github.com/filecoin-project/go-statestore v0.1.0
-	//github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
-	github.com/filecoin-project/sector-storage v0.0.0-20200810171746-eac70842d8e0
+	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
 	github.com/filecoin-project/specs-actors v0.9.3
 	//github.com/filecoin-project/specs-storage v0.1.1-0.20200730063404-f7db367e9401
 	github.com/filecoin-project/statediff v0.0.1
@@ -57,7 +57,7 @@ require (
 	github.com/ipfs/go-blockservice v0.1.4-0.20200624145336-a978cec6e834
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-cidutil v0.0.2
-	github.com/ipfs/go-datastore v0.4.4
+	github.com/ipfs/go-datastore v0.4.5
 	github.com/ipfs/go-ds-badger2 v0.1.1-0.20200708190120-187fc06f714e
 	github.com/ipfs/go-ds-leveldb v0.4.2
 	github.com/ipfs/go-ds-measure v0.1.0
@@ -129,7 +129,6 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gotest.tools v2.2.0+incompatible
-	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
 )
 
 replace github.com/golangci/golangci-lint => github.com/golangci/golangci-lint v1.18.0

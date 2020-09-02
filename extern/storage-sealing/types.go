@@ -188,6 +188,13 @@ type SectorIDCounter interface {
 	Offset(offset uint64) error
 }
 
+type SectorRecord interface {
+	Insert(id uint64) error
+	Remove(id uint64) error
+	Filter(selectedSectors []uint64) ([]uint64,error)
+	Contains(selectedSectors uint64) (bool,error)
+}
+
 type TipSetToken []byte
 
 type MsgLookup struct {

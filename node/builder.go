@@ -295,6 +295,10 @@ func Online() Option {
 			Override(new(*ffiwrapper.Config), modules.ProofsConfig),
 			Override(new(stores.LocalStorage), From(new(repo.LockedRepo))),
 			Override(new(sealing.SectorIDCounter), modules.SectorIDCounter),
+
+			// SectorRecord
+			Override(new(sealing.SectorRecord), modules.SectorsRecord),
+
 			Override(new(*sectorstorage.Manager), modules.SectorStorage),
 			Override(new(ffiwrapper.Verifier), ffiwrapper.ProofVerifier),
 

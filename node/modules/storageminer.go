@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
+	filter "github.com/filecoin-project/lotus/extern/winsector-filter"
 	"net/http"
 	"time"
 
@@ -147,8 +148,34 @@ func SectorIDCounter(ds dtypes.MetadataDS) sealing.SectorIDCounter {
 	return &sidsc{sc}
 }
 
-func StorageMiner(fc config.MinerFeeConfig) func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset) (*storage.Miner, error) {
-	return func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset) (*storage.Miner, error) {
+type sectRe struct {
+	sc *filter.LocalSectorRecord
+}
+
+func (s *sectRe)Insert(id uint64) error {
+	return s.sc.Insert(id)
+}
+
+func (s *sectRe)Remove(id uint64) error {
+	return s.sc.Remove(id)
+}
+
+func (s *sectRe)Filter(selectedSectors []uint64) ([]uint64,error) {
+	return s.sc.Filter(selectedSectors)
+}
+
+func (s *sectRe)Contains(selectedSectors uint64) (bool,error) {
+	return s.sc.Contains(selectedSectors)
+}
+
+func SectorsRecord(ds dtypes.MetadataDS) sealing.SectorRecord {
+	sc := filter.New(ds,datastore.NewKey("SectorsRecord"))
+	return &sectRe{sc}
+}
+
+
+func StorageMiner(fc config.MinerFeeConfig) func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset, sr sealing.SectorRecord) (*storage.Miner, error) {
+	return func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset, sr sealing.SectorRecord) (*storage.Miner, error) {
 		maddr, err := minerAddrFromDS(ds)
 		if err != nil {
 			return nil, err
@@ -171,7 +198,7 @@ func StorageMiner(fc config.MinerFeeConfig) func(mctx helpers.MetricsCtx, lc fx.
 			return nil, err
 		}
 
-		sm, err := storage.NewMiner(api, maddr, worker, h, ds, sealer, sc, verif, gsd, fc, offset)
+		sm, err := storage.NewMiner(api, maddr, worker, h, ds, sealer, sc, verif, gsd, fc, offset, sr)
 		if err != nil {
 			return nil, err
 		}
@@ -306,13 +333,13 @@ func StagingGraphsync(mctx helpers.MetricsCtx, lc fx.Lifecycle, ibs dtypes.Stagi
 	return gs
 }
 
-func SetupBlockProducer(lc fx.Lifecycle, ds dtypes.MetadataDS, api lapi.FullNode, epp gen.WinningPoStProver, sf *slashfilter.SlashFilter) (*miner.Miner, error) {
+func SetupBlockProducer(lc fx.Lifecycle, ds dtypes.MetadataDS, api lapi.FullNode, epp gen.WinningPoStProver, sf *slashfilter.SlashFilter, sr sealing.SectorRecord) (*miner.Miner, error) {
 	minerAddr, err := minerAddrFromDS(ds)
 	if err != nil {
 		return nil, err
 	}
 
-	m := miner.NewMiner(api, epp, minerAddr, sf)
+	m := miner.NewMiner(api, epp, minerAddr, sf, sr)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

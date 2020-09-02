@@ -46,6 +46,8 @@ func (sc *StoredCounter) Next() (uint64, error) {
 }
 
 func (sc *StoredCounter) Offset(offset uint64) error{
+	sc.lock.Lock()
+	defer sc.lock.Unlock()
 
 	buf := make([]byte, binary.MaxVarintLen64)
 	size := binary.PutUvarint(buf, offset)

@@ -46,6 +46,8 @@ type Miner struct {
 
 	getSealConfig dtypes.GetSealingConfigFunc
 	sealing       *sealing.Sealing
+
+	sr     sealing.SectorRecord
 }
 
 type storageMinerApi interface {
@@ -89,7 +91,7 @@ type storageMinerApi interface {
 	WalletHas(context.Context, address.Address) (bool, error)
 }
 
-func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig, offset rpcclient.Offset) (*Miner, error) {
+func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig, offset rpcclient.Offset, sr sealing.SectorRecord) (*Miner, error) {
 	if uint64(offset) == 0 {
 		log.Info("Already Registered, use stored SectorCounter")
 	}else {
@@ -112,6 +114,8 @@ func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, d
 		maddr:         maddr,
 		worker:        worker,
 		getSealConfig: gsd,
+
+		sr:     sr,
 	}
 
 	return m, nil
@@ -135,7 +139,7 @@ func (m *Miner) Run(ctx context.Context) error {
 	evts := events.NewEvents(ctx, m.api)
 	adaptedAPI := NewSealingAPIAdapter(m.api)
 	pcp := sealing.NewBasicPreCommitPolicy(adaptedAPI, miner.MaxSectorExpirationExtension-(miner.WPoStProvingPeriod*2), md.PeriodStart%miner.WPoStProvingPeriod)
-	m.sealing = sealing.New(adaptedAPI, fc, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, &pcp, sealing.GetSealingConfigFunc(m.getSealConfig))
+	m.sealing = sealing.New(adaptedAPI, fc, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, &pcp, sealing.GetSealingConfigFunc(m.getSealConfig),m.sr)
 
 	go m.sealing.Run(ctx) //nolint:errcheck // logged intside the function
 

@@ -413,6 +413,8 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		return xerrors.Errorf("peer ID from private key: %w", err)
 	}
 
+	log.Info("storageMinerInit: peer id is ",peerid)
+
 	mds, err := lr.Datastore("/metadata")
 	if err != nil {
 		return err
@@ -463,7 +465,16 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 				return err
 			}
 
-			m := miner.NewMiner(api, epp, a, slashfilter.New(mds))
+			//add SectorsRecord
+			sr := modules.SectorsRecord(mds)
+			if act := cctx.String("miner-address-fake"); act != "" {
+				log.Info("==========NOT gensis init")
+			}else{
+				log.Info("============gensis init insert 1 & 0")
+				err = sr.Insert(uint64(0))
+				err = sr.Insert(uint64(1))
+			}
+			m := miner.NewMiner(api, epp, a, slashfilter.New(mds),sr)
 			{
 				if err := m.Start(ctx); err != nil {
 					return xerrors.Errorf("failed to start up genesis miner: %w", err)

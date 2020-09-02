@@ -80,6 +80,8 @@ type Sealing struct {
 	stats SectorStats
 
 	getConfig GetSealingConfigFunc
+
+	sr    SectorRecord
 }
 
 type FeeConfig struct {
@@ -99,7 +101,7 @@ type UnsealedSectorInfo struct {
 	pieceSizes []abi.UnpaddedPieceSize
 }
 
-func New(api SealingAPI, fc FeeConfig, events Events, maddr address.Address, ds datastore.Batching, sealer sectorstorage.SectorManager, sc SectorIDCounter, verif ffiwrapper.Verifier, pcp PreCommitPolicy, gc GetSealingConfigFunc) *Sealing {
+func New(api SealingAPI, fc FeeConfig, events Events, maddr address.Address, ds datastore.Batching, sealer sectorstorage.SectorManager, sc SectorIDCounter, verif ffiwrapper.Verifier, pcp PreCommitPolicy, gc GetSealingConfigFunc, sr SectorRecord) *Sealing {
 	s := &Sealing{
 		api:    api,
 		feeCfg: fc,
@@ -121,6 +123,7 @@ func New(api SealingAPI, fc FeeConfig, events Events, maddr address.Address, ds 
 		stats: SectorStats{
 			bySector: map[abi.SectorID]statSectorState{},
 		},
+		sr:  sr,
 	}
 
 	s.sectors = statemachine.New(namespace.Wrap(ds, datastore.NewKey(SectorStorePrefix)), s, SectorInfo{})
