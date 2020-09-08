@@ -358,6 +358,8 @@ func (m *Miner) mineOne(ctx context.Context, base *MiningBase) (*types.BlockMsg,
 	}
 	if len(toProof) == 0 {
 		log.Info("mineOne: no local sectors selected")
+
+		//time.Sleep(1*time.Second)
 		return nil, nil
 	}
 

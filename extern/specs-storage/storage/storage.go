@@ -24,6 +24,13 @@ type Prover interface {
 	GenerateWindowPoSt(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
 }
 
+type ProverPlus interface {
+	Prover
+	GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
+	GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index []uint64) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
+	GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo [][]abi.PoStProof, index [][]uint64) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
+}
+
 type PreCommit1Out []byte
 
 type Commit1Out []byte

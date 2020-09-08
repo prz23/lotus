@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
-	"github.com/filecoin-project/specs-actors/actors/abi"
 	logging "github.com/ipfs/go-log/v2"
 	"net/rpc"
 )
@@ -75,21 +74,21 @@ func RpcCallWindowPoStSync(ipaddress string, method string, req WindowPoStReques
 }
 
 type SectorIdIndex struct {
-	SectorId abi.SectorNumber
+	SectorId uint64 /*abi.SectorNumber*/
 	PrzIndex uint64
 }
 
 // VanillaProof
 type WindowPoStRequest struct {
-	MinerID abi.ActorID
-	SectorInfo []abi.SectorInfo
-	Randomness abi.PoStRandomness
+	MinerID uint64 /*abi.ActorID*/
+	SectorInfo [][]byte /*[]abi.SectorInfo*/
+	Randomness []byte /*abi.PoStRandomness*/
 	Index []SectorIdIndex
 }
 
 // VanillaProof
 type WindowPoStResponse struct {
-	VanillaProof []abi.PoStProof
+	VanillaProof [][]byte /*[]abi.PoStProof*/
 	Index []SectorIdIndex
 }
 

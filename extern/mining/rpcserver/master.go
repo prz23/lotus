@@ -28,17 +28,40 @@ type WindowPoSt struct {
 
 func (sb *WindowPoSt) DoVanillaProof(req rpcclient.WindowPoStRequest, res *rpcclient.WindowPoStResponse) error {
 
-	//fn := func(all []rpcclient.SectorIdIndex) []uint64{
-	//	s := make([]uint64,1,1)
-	//	for _,each := range all {
-	//		s = append(s,each.PrzIndex)
-	//	}
-	//	return s
-	//}
+	minerid := abi.ActorID(req.MinerID)
 
+	var sectorinfos []abi.SectorInfo
+	for _,sinfo := range req.SectorInfo{
+		var v abi.SectorInfo
+		if err := v.UnmarshalCBOR(bytes.NewBuffer(sinfo)); err != nil {
+			return err
+		}
+		sectorinfos = append(sectorinfos,v)
+	}
 
-	//res.VanillaProof,_,_ = sb.sealer.GenerateWindowPoStVanilla(context.Background(),req.MinerID,req.SectorInfo,req.Randomness,fn(req.Index))
-	//res.Index = req.Index
+	rand := abi.PoStRandomness(req.Randomness)
+
+	fn := func(all []rpcclient.SectorIdIndex) []uint64{
+		s := make([]uint64,1,1)
+		for _,each := range all {
+			s = append(s,each.PrzIndex)
+		}
+		return s
+	}
+	
+	vanillaproof,_,_ := sb.sealer.GenerateWindowPoStVanilla(context.Background(),minerid,sectorinfos,rand,fn(req.Index))
+
+	var postproofs [][]byte
+	for _,proof := range vanillaproof{
+		buf := new(bytes.Buffer)
+		if err := proof.MarshalCBOR(buf); err != nil {
+			return err
+		}
+		postproofs = append(postproofs,buf.Bytes())
+	}
+
+	res.VanillaProof = postproofs
+	res.Index = req.Index
 	return nil
 }
 

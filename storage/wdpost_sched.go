@@ -26,7 +26,7 @@ const StartConfidence = 4 // TODO: config
 type WindowPoStScheduler struct {
 	api              storageMinerApi
 	feeCfg           config.MinerFeeConfig
-	prover           storage.Prover
+	prover           storage.ProverPlus
 	faultTracker     sectorstorage.FaultTracker
 	proofType        abi.RegisteredPoStProof
 	partitionSectors uint64
@@ -44,7 +44,7 @@ type WindowPoStScheduler struct {
 	//failLk sync.Mutex
 }
 
-func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb storage.Prover, ft sectorstorage.FaultTracker, actor address.Address, worker address.Address) (*WindowPoStScheduler, error) {
+func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb storage.ProverPlus, ft sectorstorage.FaultTracker, actor address.Address, worker address.Address) (*WindowPoStScheduler, error) {
 	mi, err := api.StateMinerInfo(context.TODO(), actor, types.EmptyTSK)
 	if err != nil {
 		return nil, xerrors.Errorf("getting sector size: %w", err)

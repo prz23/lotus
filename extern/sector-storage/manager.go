@@ -56,7 +56,7 @@ type SectorManager interface {
 	ReadPiece(context.Context, io.Writer, abi.SectorID, storiface.UnpaddedByteIndex, abi.UnpaddedPieceSize, abi.SealRandomness, cid.Cid) error
 
 	ffiwrapper.StorageSealer
-	storage.Prover
+	storage.ProverPlus
 	FaultTracker
 }
 

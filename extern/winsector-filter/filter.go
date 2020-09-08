@@ -15,7 +15,7 @@ func New(ds datastore.Datastore, name datastore.Key) *LocalSectorRecord {
 	if has {
 		return &LocalSectorRecord{ds: ds, name: name}
 	}
-	
+
 	mapa := make(map[uint64]bool)
 	buf , _ := json.Marshal(mapa)
 
