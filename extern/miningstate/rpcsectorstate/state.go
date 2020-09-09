@@ -42,7 +42,6 @@ func (s *singleton) FindAll(k []SectorId) []SlaveIP {
 	defer mut.Unlock()
 
 	lenInput := len(k)
-
 	SliceSlaveIP := make([]SlaveIP, lenInput)
 
 	for _, b := range k {
