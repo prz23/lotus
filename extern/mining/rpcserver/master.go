@@ -10,6 +10,7 @@ import (
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	state "github.com/filecoin-project/lotus/extern/miningstate/rpcsectorstate"
 	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	sectorstorage "github.com/filecoin-project/lotus/extern/sector-storage"
 	"github.com/filecoin-project/lotus/node/modules/dtypes"
 	"github.com/filecoin-project/specs-actors/actors/abi"
@@ -98,6 +99,7 @@ func (a *Register)Reg(req rpcclient.RegisterRequest, res *rpcclient.RegisterResp
 // Commit Message
 type Commit struct {
 	api api.FullNode
+	idSave idstore.SectorRecord
 }
 
 func (s *Commit)PushMsg(req rpcclient.CommitReq, res *rpcclient.CommitRes) error{
@@ -124,8 +126,11 @@ func (s *Commit)PushMsg(req rpcclient.CommitReq, res *rpcclient.CommitRes) error
 	}
 
 	res.Smsg = buf.Bytes()
+	// old way
 	getIns := GetIns()
 	getIns.Insert(req.SectorId,req.SlaveIp)
+    // new way
+	err = s.idSave.Insert(idstore.SectorId(req.SectorId), idstore.SlaveIP(req.SlaveIp))
 
 	return nil
 }
@@ -143,7 +148,8 @@ func (s *MinerAddress)GetAddress(req rpcclient.MinerAddressReq, res *rpcclient.M
 
 
 func NewStartMasterRpc(lc fx.Lifecycle, localIpAddress rpctypes.LocalServerAddr,
-	sealer sectorstorage.SectorManager, api api.FullNode, maddr dtypes.MinerAddress) error {
+	sealer sectorstorage.SectorManager, api api.FullNode,
+	maddr dtypes.MinerAddress, save idstore.SectorRecord) error {
 
 	rpcclient.Log.Info("==================================================")
 	rpcclient.Log.Info("[NewStartMasterRpc] localIpAddress is ",localIpAddress)
@@ -167,7 +173,7 @@ func NewStartMasterRpc(lc fx.Lifecycle, localIpAddress rpctypes.LocalServerAddr,
 		log.Fatalf("net.Listen tcp :0: %v", err)
 	}
 
-	err = newServer.Register(&Commit{api: api})
+	err = newServer.Register(&Commit{api: api, idSave: save})
 	if err != nil {
 		log.Fatalf("net.Listen tcp :0: %v", err)
 	}

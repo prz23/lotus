@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	filter "github.com/filecoin-project/lotus/extern/winsector-filter"
 	"net/http"
 	"time"
@@ -174,8 +175,8 @@ func SectorsRecord(ds dtypes.MetadataDS) sealing.SectorRecord {
 }
 
 
-func StorageMiner(fc config.MinerFeeConfig) func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset, sr sealing.SectorRecord) (*storage.Miner, error) {
-	return func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset, sr sealing.SectorRecord) (*storage.Miner, error) {
+func StorageMiner(fc config.MinerFeeConfig) func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset, sr sealing.SectorRecord, ids idstore.SectorRecord) (*storage.Miner, error) {
+	return func(mctx helpers.MetricsCtx, lc fx.Lifecycle, api lapi.FullNode, h host.Host, ds dtypes.MetadataDS, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc,offset rpcclient.Offset, sr sealing.SectorRecord, ids idstore.SectorRecord) (*storage.Miner, error) {
 		maddr, err := minerAddrFromDS(ds)
 		if err != nil {
 			return nil, err
@@ -193,7 +194,7 @@ func StorageMiner(fc config.MinerFeeConfig) func(mctx helpers.MetricsCtx, lc fx.
 			return nil, err
 		}
 
-		fps, err := storage.NewWindowedPoStScheduler(api, fc, sealer, sealer, maddr, worker)
+		fps, err := storage.NewWindowedPoStScheduler(api, fc, sealer, sealer, maddr, worker, ids)
 		if err != nil {
 			return nil, err
 		}

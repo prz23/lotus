@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -36,6 +37,7 @@ type WindowPoStScheduler struct {
 
 	cur *types.TipSet
 
+	ids idstore.SectorRecord
 	// if a post is in progress, this indicates for which ElectionPeriodStart
 	activeDeadline *miner.DeadlineInfo
 	abort          context.CancelFunc
@@ -44,7 +46,7 @@ type WindowPoStScheduler struct {
 	//failLk sync.Mutex
 }
 
-func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb storage.ProverPlus, ft sectorstorage.FaultTracker, actor address.Address, worker address.Address) (*WindowPoStScheduler, error) {
+func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb storage.ProverPlus, ft sectorstorage.FaultTracker, actor address.Address, worker address.Address, ids idstore.SectorRecord) (*WindowPoStScheduler, error) {
 	mi, err := api.StateMinerInfo(context.TODO(), actor, types.EmptyTSK)
 	if err != nil {
 		return nil, xerrors.Errorf("getting sector size: %w", err)
@@ -65,6 +67,7 @@ func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb 
 
 		actor:  actor,
 		worker: worker,
+		ids:    ids,
 	}, nil
 }
 

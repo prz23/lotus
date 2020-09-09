@@ -5,6 +5,7 @@ import (
 	"errors"
 	umrpc "github.com/filecoin-project/lotus/extern/mining/rpcserver"
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"time"
 
 	logging "github.com/ipfs/go-log"
@@ -305,6 +306,8 @@ func Online() Option {
 			Override(new(sectorstorage.SectorManager), From(new(*sectorstorage.Manager))),
 			Override(new(storage2.Prover), From(new(sectorstorage.SectorManager))),
 
+			// sectorIds & ip store
+			Override(new(idstore.SectorRecord),idstore.StartIdIpStore),
 			// both master & slave start a rpc server   it start the rpc server
 			Override(RpcKey, umrpc.NewStartMasterRpc),
 			// only slave register to the master , it return the SectorIDCounter Offset

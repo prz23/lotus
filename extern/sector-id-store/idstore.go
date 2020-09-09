@@ -22,6 +22,10 @@ type SectorIdStore struct {
 	name datastore.Key
 }
 
+func StartIdIpStore(ds datastore.Datastore) SectorRecord{
+	return NewIdIpStore(ds,datastore.NewKey("IpIdStore"))
+}
+
 func NewIdIpStore(ds datastore.Datastore, name datastore.Key) *SectorIdStore {
 	has, _ := ds.Has(name)
 	if has {
