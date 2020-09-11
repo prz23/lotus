@@ -8,7 +8,7 @@ import (
 type SectorId uint64
 type SlaveIP string
 
-type SectorRecord interface {
+type SectorIpRecord interface {
 	Insert(id SectorId,ip SlaveIP) error
 	Remove(id SectorId) error
 	FindAll(k []SectorId) ([]SlaveIP,error)
@@ -22,7 +22,7 @@ type SectorIdStore struct {
 	name datastore.Key
 }
 
-func StartIdIpStore(ds datastore.Datastore) SectorRecord{
+func StartIdIpStore(ds datastore.Datastore) SectorIpRecord {
 	return NewIdIpStore(ds,datastore.NewKey("IpIdStore"))
 }
 

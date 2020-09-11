@@ -3,6 +3,7 @@ package sectorstorage
 import (
 	"context"
 	"errors"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"io"
 	"net/http"
 
@@ -89,13 +90,13 @@ type SealerConfig struct {
 
 type StorageAuth http.Header
 
-func New(ctx context.Context, ls stores.LocalStorage, si stores.SectorIndex, cfg *ffiwrapper.Config, sc SealerConfig, urls URLs, sa StorageAuth) (*Manager, error) {
+func New(ctx context.Context, ls stores.LocalStorage, si stores.SectorIndex, cfg *ffiwrapper.Config, sc SealerConfig, urls URLs, sa StorageAuth, ids idstore.SectorIpRecord) (*Manager, error) {
 	lstor, err := stores.NewLocal(ctx, ls, si, urls)
 	if err != nil {
 		return nil, err
 	}
 
-	prover, err := ffiwrapper.New(&readonlyProvider{stor: lstor, index: si}, cfg)
+	prover, err := ffiwrapper.New(&readonlyProvider{stor: lstor, index: si}, cfg , ids)
 	if err != nil {
 		return nil, xerrors.Errorf("creating prover instance: %w", err)
 	}

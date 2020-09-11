@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	ffi "github.com/filecoin-project/filecoin-ffi"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
@@ -49,8 +50,11 @@ func (sb *WindowPoSt) DoVanillaProof(req rpcclient.WindowPoStRequest, res *rpccl
 		}
 		return s
 	}
+
+	var SectorIndexInfo ffi.SectorIndexInfo
+	_ = SectorIndexInfo.UnmarshalJSON(req.Index)
 	
-	vanillaproof,_,_ := sb.sealer.GenerateWindowPoStVanilla(context.Background(),minerid,sectorinfos,rand,fn(req.Index))
+	vanillaproof,_,_ := sb.sealer.GenerateWindowPoStVanilla(context.Background(),minerid,sectorinfos,rand, SectorIndexInfo)
 
 	var postproofs [][]byte
 	for _,proof := range vanillaproof{
@@ -99,7 +103,7 @@ func (a *Register)Reg(req rpcclient.RegisterRequest, res *rpcclient.RegisterResp
 // Commit Message
 type Commit struct {
 	api api.FullNode
-	idSave idstore.SectorRecord
+	idSave idstore.SectorIpRecord
 }
 
 func (s *Commit)PushMsg(req rpcclient.CommitReq, res *rpcclient.CommitRes) error{
@@ -149,7 +153,7 @@ func (s *MinerAddress)GetAddress(req rpcclient.MinerAddressReq, res *rpcclient.M
 
 func NewStartMasterRpc(lc fx.Lifecycle, localIpAddress rpctypes.LocalServerAddr,
 	sealer sectorstorage.SectorManager, api api.FullNode,
-	maddr dtypes.MinerAddress, save idstore.SectorRecord) error {
+	maddr dtypes.MinerAddress, save idstore.SectorIpRecord) error {
 
 	rpcclient.Log.Info("==================================================")
 	rpcclient.Log.Info("[NewStartMasterRpc] localIpAddress is ",localIpAddress)

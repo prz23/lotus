@@ -83,7 +83,7 @@ type WindowPoStRequest struct {
 	MinerID uint64 /*abi.ActorID*/
 	SectorInfo [][]byte /*[]abi.SectorInfo*/
 	Randomness []byte /*abi.PoStRandomness*/
-	Index []SectorIdIndex
+	Index []byte /*SectorIdIndex*/
 }
 
 // VanillaProof

@@ -229,7 +229,7 @@ var sealBenchCmd = &cli.Command{
 			Root: sbdir,
 		}
 
-		sb, err := ffiwrapper.New(sbfs, cfg)
+		sb, err := ffiwrapper.New(sbfs, cfg, nil)
 		if err != nil {
 			return err
 		}
@@ -715,7 +715,7 @@ var proveCmd = &cli.Command{
 			SealProofType: spt,
 		}
 
-		sb, err := ffiwrapper.New(nil, cfg)
+		sb, err := ffiwrapper.New(nil, cfg, nil)
 		if err != nil {
 			return err
 		}

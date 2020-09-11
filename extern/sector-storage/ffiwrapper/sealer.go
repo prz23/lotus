@@ -1,6 +1,7 @@
 package ffiwrapper
 
 import (
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	logging "github.com/ipfs/go-log/v2"
 )
@@ -13,6 +14,7 @@ type Sealer struct {
 
 	sectors  SectorProvider
 	stopping chan struct{}
+	ids idstore.SectorIpRecord
 }
 
 func (sb *Sealer) Stop() {

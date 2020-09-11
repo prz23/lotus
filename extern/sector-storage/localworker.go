@@ -92,7 +92,7 @@ func (l *localWorkerPathProvider) AcquireSector(ctx context.Context, sector abi.
 }
 
 func (l *LocalWorker) sb() (ffiwrapper.Storage, error) {
-	return ffiwrapper.New(&localWorkerPathProvider{w: l}, l.scfg)
+	return ffiwrapper.New(&localWorkerPathProvider{w: l}, l.scfg, nil)
 }
 
 func (l *LocalWorker) NewSector(ctx context.Context, sector abi.SectorID) error {
