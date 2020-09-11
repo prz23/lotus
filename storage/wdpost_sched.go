@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/fatih/color"
 	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"time"
 
@@ -185,10 +186,12 @@ func (s *WindowPoStScheduler) update(ctx context.Context, new *types.TipSet) err
 	}
 
 	if deadlineEquals(s.activeDeadline, di) {
+		log.Info(color.YellowString("%s", "deadlineEquals : already working on this deadline"))
 		return nil // already working on this deadline
 	}
 
 	if !di.PeriodStarted() {
+		log.Info(color.YellowString("%s", "PeriodStarted : not proving anything yet"))
 		return nil // not proving anything yet
 	}
 

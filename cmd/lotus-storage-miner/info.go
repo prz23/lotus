@@ -191,6 +191,8 @@ func infoCmdAct(cctx *cli.Context) error {
 	fmt.Printf("\tPledge:      %s\n", types.FIL(mas.InitialPledgeRequirement))
 	fmt.Printf("\tLocked:      %s\n", types.FIL(mas.LockedFunds))
 	color.Green("\tAvailable:   %s", types.FIL(mas.GetAvailableBalance(mact.Balance)))
+	fmt.Printf("Miner ProvingPeriodStart: %s\n", color.BlueString("%s", mas.ProvingPeriodStart))
+	fmt.Printf("Miner CurrentDeadline: %s\n", color.BlueString("%s", mas.CurrentDeadline))
 	wb, err := api.WalletBalance(ctx, mi.Worker)
 	if err != nil {
 		return xerrors.Errorf("getting worker balance: %w", err)

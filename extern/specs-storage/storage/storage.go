@@ -29,7 +29,7 @@ type ProverPlus interface {
 	Prover
 	GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
 	GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
-	GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo [][]abi.PoStProof, randomness abi.PoStRandomness, index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
+	GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
 }
 
 type PreCommit1Out []byte

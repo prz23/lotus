@@ -122,6 +122,7 @@ func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID
 
 	var allproofs []abi.PoStProof
 	var allindexinfo []ffi.SectorIndexInfo
+	var allskipped []abi.SectorID
 	for _,proofdata := range ResponseData{
 		for _,proof := range proofdata.VanillaProof{
 			var v abi.PoStProof
@@ -130,12 +131,19 @@ func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID
 			}
 			allproofs = append(allproofs,v)
 		}
-		var allindex []ffi.SectorIndex
-		for _,index := range proofdata.Index{
-			in := ffi.SectorIndex{abi.SectorNumber(index.SectorId),index.PrzIndex}
-			allindex = append(allindex,in)
+
+		var SectorIndexInfo ffi.SectorIndexInfo
+		_ = SectorIndexInfo.UnmarshalJSON(proofdata.Index)
+
+		allindexinfo = append(allindexinfo,SectorIndexInfo)
+
+		for _,skip := range proofdata.Skipped{
+			var v abi.SectorID
+			if err := v.UnmarshalCBOR(bytes.NewBuffer(skip)); err != nil {
+				return nil,nil,nil
+			}
+			allskipped = append(allskipped,v)
 		}
-		allindexinfo = append(allindexinfo,ffi.SectorIndexInfo{allindex})
 	}
 
 
@@ -143,7 +151,7 @@ func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID
 	result,_,_ := m.GenerateWindowPoStSnark(ctx,minerID,sectorInfo,randomness,allproofs,allindexinfo)
 
 	log.Info("[GenerateWindowPoStPlus] SnarkWindowPoStM Local Snark Merge Finish ")
-	return result, nil, nil
+	return result, allskipped, nil
 }
 
 func (sb *Sealer)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
@@ -161,7 +169,7 @@ func (sb *Sealer)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.Acto
 
 func (sb *Sealer)GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
 	log.Info("[GenerateWindowPoStSnark] GenerateWindowPoStSnark start")
-
+	randomness[31] &= 0x3f
 	proof, err = ffi.GenerateWindowPoStSnark(minerID, sectorInfo, randomness,ffi.VanillaProofs{Proofs: proofs},ffi.VanillaInfos{Infos:index})
 
 	return proof, nil, nil

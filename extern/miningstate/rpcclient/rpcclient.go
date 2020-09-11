@@ -2,7 +2,6 @@ package rpcclient
 
 import (
 	"fmt"
-	"github.com/filecoin-project/go-address"
 	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
 	logging "github.com/ipfs/go-log/v2"
 	"net/rpc"
@@ -89,7 +88,8 @@ type WindowPoStRequest struct {
 // VanillaProof
 type WindowPoStResponse struct {
 	VanillaProof [][]byte /*[]abi.PoStProof*/
-	Index []SectorIdIndex
+	Index []byte
+	Skipped [][]byte
 }
 
 func getindex(a []SectorIdIndex) []uint64 {
@@ -131,82 +131,29 @@ func RpcCallCommit(req CommitReq) (CommitRes,error) {
 }
 
 
-type SectorRequest struct {
-	SectorId uint64
-	Data     []byte
-}
-
-type SectorResponse struct {
-	SectorId uint64
-	Data     []byte
-}
 
 
-// to get MinerAddress from Master MinerDS
-type MinerAddress struct {
-	Maddr address.Address
-}
-type MinerAddressReq struct {
-}
-type MindrAddressRes struct {
-	Maddr address.Address
+type CheckSectorsRequest struct {
+	Toproof []byte
+	Regitype uint64
 }
 
-// not used
-//func RpcCallMinerAddress(role rpctypes.Role, ds dtypes.MetadataDS,addr dtypes.MinerAddressIntermediate) dtypes.MinerAddress {
-//
-//	if role == rpctypes.Role_Master {
-//		Log.Info("Master return loacl MinerAddress")
-//		return dtypes.MinerAddress(addr)
-//	}
-//
-//	req := MinerAddressReq{}
-//	method := "MinerAddress.GetAddress"
-//
-//	conn, err := rpc.DialHTTP("tcp", MasterIP)
-//	if err != nil {
-//		fmt.Println("dailing error: ", err)
-//	}
-//
-//	var res MindrAddressRes
-//
-//	err = conn.Call(method, req, &res)
-//	if err != nil {
-//		fmt.Println("WindowPoSt error: ", err)
-//	}
-//
-//
-//	// ReSaveTheAddress
-//	if err := ds.Put(datastore.NewKey("miner-address"), res.Maddr.Bytes()); err != nil {
-//		return dtypes.MinerAddress(address.Undef)
-//	}
-//
-//	return dtypes.MinerAddress(res.Maddr)
-//}
-//
-//// used in miner init!!!!!!! ip and role required
-//func RpcCallMinerAddressInit(role rpctypes.Role,ip string) address.Address {
-//
-//	if role == rpctypes.Role_Master {
-//		Log.Info("Master return loacl MinerAddress")
-//		return address.Undef
-//	}
-//
-//	req := MinerAddressReq{}
-//	method := "MinerAddress.GetAddress"
-//
-//	conn, err := rpc.DialHTTP("tcp", ip)
-//	if err != nil {
-//		fmt.Println("dailing error: ", err)
-//	}
-//
-//	var res MindrAddressRes
-//
-//	err = conn.Call(method, req, &res)
-//	if err != nil {
-//		fmt.Println("addr error: ", err)
-//	}
-//
-//	Log.Info("Get Maddr From Master =",res.Maddr)
-//	return res.Maddr
-//}
+type CheckSectorsResponse struct {
+    Bad [][]byte
+}
+
+func RpcCallCheck(req CheckSectorsRequest) (CheckSectorsResponse,error) {
+	conn, err := rpc.DialHTTP("tcp", MasterIP)
+	if err != nil {
+		fmt.Println("dailing error: ", err)
+	}
+
+	var res CheckSectorsResponse
+
+	err = conn.Call("CheckSectors.CheckSector", req, &res)
+	if err != nil {
+		fmt.Println("WindowPoSt error: ", err)
+	}
+
+	return res,nil
+}

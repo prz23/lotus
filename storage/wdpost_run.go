@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/fatih/color"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	"time"
 
 	"github.com/filecoin-project/go-bitfield"
@@ -36,7 +38,7 @@ func (s *WindowPoStScheduler) failPost(deadline *miner.DeadlineInfo) {
 
 func (s *WindowPoStScheduler) doPost(ctx context.Context, deadline *miner.DeadlineInfo, ts *types.TipSet) {
 	ctx, abort := context.WithCancel(ctx)
-
+    log.Info("=========",color.YellowString("%s", "Start doPost"),"==============")
 	s.abort = abort
 	s.activeDeadline = deadline
 
@@ -70,43 +72,51 @@ func (s *WindowPoStScheduler) checkSectors(ctx context.Context, check abi.BitFie
 		return bitfield.BitField{}, xerrors.Errorf("getting seal proof type: %w", err)
 	}
 
-	mid, err := address.IDFromAddress(s.actor)
-	if err != nil {
-		return bitfield.BitField{}, err
+//	mid, err := address.IDFromAddress(s.actor)
+//	if err != nil {
+//		return bitfield.BitField{}, err
+//	}
+////////////
+//	sectors := make(map[abi.SectorID]struct{})
+//	var tocheck []abi.SectorID
+//	err = check.ForEach(func(snum uint64) error {
+//		s := abi.SectorID{
+//			Miner:  abi.ActorID(mid),
+//			Number: abi.SectorNumber(snum),
+//		}
+//
+//		tocheck = append(tocheck, s)
+//		sectors[s] = struct{}{}               //////////////
+//		return nil
+//	})
+//	if err != nil {
+//		return bitfield.BitField{}, xerrors.Errorf("iterating over bitfield: %w", err)
+//	}
+/////////
+    bad  := bitfield.New()
+	ips,_ := s.ids.GetAllIp()
+    for _,ip := range ips{
+		eachbad,_ := SendMsg(check,spt,ip)
+		bad,_ = bitfield.MergeBitFields(bad,eachbad)
 	}
-
-	sectors := make(map[abi.SectorID]struct{})
-	var tocheck []abi.SectorID
-	err = check.ForEach(func(snum uint64) error {
-		s := abi.SectorID{
-			Miner:  abi.ActorID(mid),
-			Number: abi.SectorNumber(snum),
-		}
-
-		tocheck = append(tocheck, s)
-		sectors[s] = struct{}{}
-		return nil
-	})
-	if err != nil {
-		return bitfield.BitField{}, xerrors.Errorf("iterating over bitfield: %w", err)
-	}
-
-	bad, err := s.faultTracker.CheckProvable(ctx, spt, tocheck)
-	if err != nil {
-		return bitfield.BitField{}, xerrors.Errorf("checking provable sectors: %w", err)
-	}
-	for _, id := range bad {
-		delete(sectors, id)
-	}
-
-	log.Warnw("Checked sectors", "checked", len(tocheck), "good", len(sectors))
-
-	sbf := bitfield.New()
-	for s := range sectors {
-		sbf.Set(uint64(s.Number))
-	}
-
-	return sbf, nil
+	toreturn,_ := bitfield.SubtractBitField(check,bad)
+	return toreturn, nil
+	//bad, err := s.faultTracker.CheckProvable(ctx, spt, tocheck)
+	//if err != nil {
+	//	return bitfield.BitField{}, xerrors.Errorf("checking provable sectors: %w", err)
+	//}
+	//for _, id := range bad {
+	//	delete(sectors, id)
+	//}
+	//
+	//log.Warnw("Checked sectors", "checked", len(tocheck), "good", len(sectors))
+	//
+	//sbf := bitfield.New()
+	//for s := range sectors {
+	//	sbf.Set(uint64(s.Number))
+	//}
+	//
+	//return sbf, nil
 }
 
 func (s *WindowPoStScheduler) checkNextRecoveries(ctx context.Context, dlIdx uint64, partitions []*miner.Partition) error {
@@ -404,7 +414,7 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di miner.DeadlineInfo
 		return nil, err
 	}
 
-	postOut, postSkipped, err := s.prover.GenerateWindowPoSt(ctx, abi.ActorID(mid), sinfos, abi.PoStRandomness(rand))
+	postOut, postSkipped, err := s.prover.GenerateWindowPoStPlus(ctx, abi.ActorID(mid), sinfos, abi.PoStRandomness(rand))
 	if err != nil {
 		return nil, xerrors.Errorf("running post failed: %w", err)
 	}
@@ -546,4 +556,34 @@ func (s *WindowPoStScheduler) setSender(ctx context.Context, msg *types.Message,
 	}
 
 	msg.From = pa
+}
+
+
+func SendMsg(tocheck abi.BitField, regtype abi.RegisteredSealProof, ip string) (bitfield.BitField, error) {
+
+	buf2 := new(bytes.Buffer)
+	if err := tocheck.MarshalCBOR(buf2); err != nil {
+		return bitfield.BitField{}, err
+	}
+
+	res,err := rpcclient.RpcCallCheck(rpcclient.CheckSectorsRequest{Toproof: buf2.Bytes(), Regitype: uint64(regtype)})
+	if err != nil {
+		return bitfield.BitField{}, err
+	}
+
+	ids := make([]abi.SectorID,1)
+	for _,each := range res.Bad{
+		var v abi.SectorID
+		if err = v.UnmarshalCBOR(bytes.NewBuffer(each)); err != nil {
+		return bitfield.BitField{}, err
+	    }
+		ids = append(ids,v)
+	}
+
+	idsbit := bitfield.New()
+	for _,each := range ids {
+		idsbit.Set(uint64(each.Number))
+	}
+
+	return idsbit, nil
 }

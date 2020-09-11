@@ -14,15 +14,16 @@ func init() {
 	power.ConsensusMinerMinPower = big.NewInt(2048)
 	miner.SupportedProofTypes = map[abi.RegisteredSealProof]struct{}{
 		abi.RegisteredSealProof_StackedDrg2KiBV1: {},
+		abi.RegisteredSealProof_StackedDrg8MiBV1: {},
 	}
 	verifreg.MinVerifiedDealSize = big.NewInt(256)
 
 	BuildType |= Build2k
 }
 
-const BlockDelaySecs = uint64(4)
+const BlockDelaySecs = uint64(8)
 
-const PropagationDelaySecs = uint64(1)
+const PropagationDelaySecs = uint64(4)
 
 // SlashablePowerDelay is the number of epochs after ElectionPeriodStart, after
 // which the miner is slashed

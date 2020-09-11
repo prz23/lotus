@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	filter "github.com/filecoin-project/lotus/extern/winsector-filter"
@@ -142,6 +143,10 @@ func (s *sidsc) Next() (abi.SectorNumber, error) {
 
 func (s *sidsc) Offset(offset uint64) error {
 	return s.sc.Offset(offset)
+}
+
+func (s *sidsc)Now() (bitfield.BitField,uint64,uint64){
+	return s.sc.Now()
 }
 
 func SectorIDCounter(ds dtypes.MetadataDS) sealing.SectorIDCounter {

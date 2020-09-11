@@ -2,6 +2,7 @@ package storedcounter
 
 import (
 	"encoding/binary"
+	"github.com/filecoin-project/go-bitfield"
 	"sync"
 
 	"github.com/ipfs/go-datastore"
@@ -53,4 +54,42 @@ func (sc *StoredCounter) Offset(offset uint64) error{
 	size := binary.PutUvarint(buf, offset)
 
 	return sc.ds.Put(sc.name, buf[:size])
+}
+
+const base uint64 = 2000000
+
+func (sc *StoredCounter)Now() (bitfield.BitField,uint64,uint64){
+
+	has, err := sc.ds.Has(sc.name)
+	if err != nil {
+		return bitfield.BitField{}, 0, 0
+	}
+
+	if has {
+		curBytes, err := sc.ds.Get(sc.name)
+		if err != nil {
+			return bitfield.BitField{}, 0, 0
+		}
+		end, _ := binary.Uvarint(curBytes)
+
+		c := end/base
+		start := c * base
+
+		ends := make([]uint64,end)
+		for i := range ends {
+			ends[i] = 1
+		}
+
+		starts := make([]uint64,start)
+		for i := range starts {
+			starts[i] = 1
+		}
+
+		e := bitfield.NewFromSet(ends)
+		s := bitfield.NewFromSet(starts)
+		all, _ := bitfield.SubtractBitField(e,s)
+        return all,start,end
+	}
+
+	return bitfield.BitField{}, 0, 0
 }

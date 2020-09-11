@@ -3,6 +3,7 @@ package sealing
 import (
 	"bytes"
 	"context"
+	"github.com/filecoin-project/go-bitfield"
 
 	"github.com/ipfs/go-cid"
 
@@ -186,6 +187,7 @@ func (t *SectorInfo) keepUnsealedRanges(invert bool) []storage.Range {
 type SectorIDCounter interface {
 	Next() (abi.SectorNumber, error)
 	Offset(offset uint64) error
+	Now() (bitfield.BitField,uint64,uint64)
 }
 
 type SectorRecord interface {

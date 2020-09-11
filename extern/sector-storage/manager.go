@@ -3,6 +3,7 @@ package sectorstorage
 import (
 	"context"
 	"errors"
+	ffi "github.com/filecoin-project/filecoin-ffi"
 	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"io"
 	"net/http"
@@ -506,3 +507,15 @@ func (m *Manager) Close(ctx context.Context) error {
 }
 
 var _ SectorManager = &Manager{}
+
+
+func (m *Manager)GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+
+	return nil, nil, nil
+}
+func (m *Manager)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+	return nil, nil, nil
+}
+func (m *Manager)GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+	return nil, nil, nil
+}
