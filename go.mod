@@ -139,3 +139,5 @@ replace github.com/dgraph-io/badger/v2 => github.com/dgraph-io/badger/v2 v2.0.1-
 replace github.com/filecoin-project/test-vectors => ./extern/test-vectors
 
 replace github.com/filecoin-project/go-storedcounter => ./extern/go-storedcounter
+
+replace github.com/filecoin-project/specs-actors => ./extern/specs-actors
