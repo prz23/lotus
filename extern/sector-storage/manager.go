@@ -75,7 +75,7 @@ type Manager struct {
 
 	sched *scheduler
 
-	storage.Prover
+	storage.ProverPlus
 }
 
 type SealerConfig struct {
@@ -115,7 +115,7 @@ func New(ctx context.Context, ls stores.LocalStorage, si stores.SectorIndex, cfg
 
 		sched: newScheduler(cfg.SealProofType),
 
-		Prover: prover,
+		ProverPlus: prover,
 	}
 
 	go m.sched.runSched()
@@ -510,12 +510,12 @@ var _ SectorManager = &Manager{}
 
 
 func (m *Manager)GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
-
-	return nil, nil, nil
+    log.Info("GenerateWindowPoStPlus")
+	return m.ProverPlus.GenerateWindowPoStPlus(ctx,minerID,sectorInfo,randomness)
 }
 func (m *Manager)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
-	return nil, nil, nil
+	return m.ProverPlus.GenerateWindowPoStVanilla(ctx,minerID,sectorInfo,randomness,index)
 }
 func (m *Manager)GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
-	return nil, nil, nil
+	return m.ProverPlus.GenerateWindowPoStSnark(ctx,minerID,sectorInfo,randomness,proofs,index)
 }

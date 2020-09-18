@@ -14,13 +14,13 @@ import (
 )
 
 // The period over which all a miner's active sectors will be challenged.
-var WPoStProvingPeriod = abi.ChainEpoch(builtin.EpochsInDay) // 24 hours
-
+var WPoStProvingPeriod = abi.ChainEpoch(480) // 24 hours
+//abi.ChainEpoch(builtin.EpochsInDay)
 // The duration of a deadline's challenge window, the period before a deadline when the challenge is available.
 var WPoStChallengeWindow = abi.ChainEpoch(30 * 60 / builtin.EpochDurationSeconds) // 30 minutes (48 per day)
 
 // The number of non-overlapping PoSt deadlines in each proving period.
-const WPoStPeriodDeadlines = uint64(48)
+const WPoStPeriodDeadlines = uint64(48) //48
 
 // WPoStMaxChainCommitAge is the maximum distance back that a valid Window PoSt must commit to the current chain.
 var WPoStMaxChainCommitAge = WPoStChallengeWindow

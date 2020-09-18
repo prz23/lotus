@@ -14,7 +14,7 @@ import (
 // https://github.com/filecoin-project/specs-actors/issues/353
 // If EpochDurationSeconds is changed, update `BaselineExponent`, `lambda`, and // `expLamSubOne` in ./reward/reward_logic.go
 // You can re-calculate these constants by changing the epoch duration in ./reward/reward_calc.py and running it.
-const EpochDurationSeconds = 30
+const EpochDurationSeconds = 180 //30
 const SecondsInHour = 60 * 60
 const SecondsInDay = 24 * SecondsInHour
 const EpochsInHour = SecondsInHour / EpochDurationSeconds

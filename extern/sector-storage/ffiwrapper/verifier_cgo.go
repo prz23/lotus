@@ -53,6 +53,8 @@ func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID
 	sectorslen := len(sectorInfo)
 
 	log.Info("[GenerateWindowPoStPlus] sector len = ",sectorslen)
+	log.Infow("[GenerateWindowPoStPlus]  ",
+		"sector len =",sectorslen)
 
 	var SortedSectorNumber sort.IntSlice
 	SectorNumberSectorInfoMap := make(map[abi.SectorNumber]abi.SectorInfo)
@@ -65,7 +67,7 @@ func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID
 
 	log.Info("[GenerateWindowPoStPlus] SortedSectorNumber = ",SortedSectorNumber)
 
-	query := make([]idstore.SectorId,1,1)
+	var query []idstore.SectorId
 	sectormap := make(map[int]int)  // map[SortedSectorNumber]przindex
 
 	for przindex, secortnumber := range SortedSectorNumber {
@@ -80,12 +82,11 @@ func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID
 	log.Info("[GenerateWindowPoStPlus] SlaveIP & Its SectorNumbers = ",SortedSectorNumber)
 
 	var chanlist []chan *rpc.Call
-	chanlist = make([]chan *rpc.Call,1,1)
 
 	for ip,sectorids := range secipmap {
 
-		localindex := make([]ffi.SectorIndex,1,1)
-		localcectorinfo := make([][]byte,1,1)
+		var localindex []ffi.SectorIndex
+		var localcectorinfo [][]byte
 
 		for _,id := range sectorids {
 			localindex = append(localindex, ffi.SectorIndex{ SectorNum: abi.SectorNumber(id),
@@ -112,13 +113,19 @@ func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID
 		chanlist = append(chanlist,response)
 	}
 
-	ResponseData := make([]rpcclient.WindowPoStResponse,1,1)
+	log.Info("[GenerateWindowPoStPlus] WindowPoStRequest 1 ")
+	var ResponseData []*rpcclient.WindowPoStResponse
 	for _,eachchan := range chanlist{
 		select {
-		case data := <-eachchan: ResponseData = append(ResponseData,data.Reply.(rpcclient.WindowPoStResponse))
+		case data := <-eachchan:{
+			    log.Info("========[GenerateWindowPoStPlus]==========")
+			    ResponseData = append(ResponseData,data.Reply.(*rpcclient.WindowPoStResponse))
+		    }
 		}
 	}
 	// all channels are returned
+
+	log.Info("[GenerateWindowPoStPlus] WindowPoStRequest 2")
 
 	var allproofs []abi.PoStProof
 	var allindexinfo []ffi.SectorIndexInfo

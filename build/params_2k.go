@@ -21,9 +21,9 @@ func init() {
 	BuildType |= Build2k
 }
 
-const BlockDelaySecs = uint64(8)
+const BlockDelaySecs = uint64(2)
 
-const PropagationDelaySecs = uint64(4)
+const PropagationDelaySecs = uint64(1)
 
 // SlashablePowerDelay is the number of epochs after ElectionPeriodStart, after
 // which the miner is slashed

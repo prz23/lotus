@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -114,6 +115,10 @@ var initCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "miner-address-fake",
+			Usage: "",
+		},
+		&cli.StringFlag{
+			Name:  "masterip",
 			Usage: "",
 		},
 	},
@@ -467,12 +472,16 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 
 			//add SectorsRecord
 			sr := modules.SectorsRecord(mds)
+			ids := idstore.StartIdIpStore(mds)
 			if act := cctx.String("miner-address-fake"); act != "" {
 				log.Info("==========NOT gensis init")
 			}else{
 				log.Info("============gensis init insert 1 & 0")
 				err = sr.Insert(uint64(0))
 				err = sr.Insert(uint64(1))
+				ip := cctx.String("masterip")
+				_ = ids.Insert(0, idstore.SlaveIP(ip))
+				_ = ids.Insert(1, idstore.SlaveIP(ip))
 			}
 			m := miner.NewMiner(api, epp, a, slashfilter.New(mds),sr)
 			{

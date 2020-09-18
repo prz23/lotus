@@ -45,7 +45,7 @@ func NewIdIpStore(ds dtypes.MetadataDS, name datastore.Key, name2 datastore.Key,
 	size := len(buf)
 	_ = ds.Put(name, buf[:size])
 //
-	ipcollections := make([]string,1)
+	ipcollections := make(map[string]bool)
 	buf2 , _ := json.Marshal(ipcollections)
 	size2 := len(buf2)
 	_ = ds.Put(name3, buf2[:size2])
@@ -181,12 +181,13 @@ func (sc *SectorIdStore)saveip(ip string) error{
 		if err != nil {
 			return err
 		}
-		var data []string
+		var data map[string]bool
 		err = json.Unmarshal(curBytes,&data)
 		if err != nil {
 			return err
 		}
-		data = append(data,ip)
+
+		data[ip] = true
 
 		bytes,err := json.Marshal(data)
 		if err != nil {
@@ -210,13 +211,18 @@ func (sc *SectorIdStore)GetAllIp() ([]string,error){
 		if err != nil {
 			return nil,err
 		}
-		var data []string
+		var data map[string]bool
 		err = json.Unmarshal(curBytes,&data)
 		if err != nil {
 			return nil,err
 		}
 
-		return data,nil
+		var data2 []string
+
+		for each,_ := range data {
+			data2 = append(data2,each)
+		}
+		return data2,nil
 	}
 	return nil,err
 }

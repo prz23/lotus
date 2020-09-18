@@ -142,8 +142,8 @@ type CheckSectorsResponse struct {
     Bad [][]byte
 }
 
-func RpcCallCheck(req CheckSectorsRequest) (CheckSectorsResponse,error) {
-	conn, err := rpc.DialHTTP("tcp", MasterIP)
+func RpcCallCheck(req CheckSectorsRequest,ip string) (CheckSectorsResponse,error) {
+	conn, err := rpc.DialHTTP("tcp", ip)
 	if err != nil {
 		fmt.Println("dailing error: ", err)
 	}

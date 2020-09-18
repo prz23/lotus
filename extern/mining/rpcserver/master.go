@@ -49,8 +49,9 @@ func (sb *WindowPoSt) DoVanillaProof(req rpcclient.WindowPoStRequest, res *rpccl
 	var SectorIndexInfo ffi.SectorIndexInfo
 	_ = SectorIndexInfo.UnmarshalJSON(req.Index)
 	
-	vanillaproof,skip,_ := sb.sealer.GenerateWindowPoStVanilla(context.Background(), minerid, sectorinfos, rand, SectorIndexInfo)
+	vanillaproof,skip,err:= sb.sealer.GenerateWindowPoStVanilla(context.Background(), minerid, sectorinfos, rand, SectorIndexInfo)
 
+	rpcclient.Log.Info("DoVanillaProof 1 err",err)
 	var postproofs [][]byte
 	for _,proof := range vanillaproof{
 		buf := new(bytes.Buffer)
@@ -60,6 +61,7 @@ func (sb *WindowPoSt) DoVanillaProof(req rpcclient.WindowPoStRequest, res *rpccl
 		postproofs = append(postproofs,buf.Bytes())
 	}
 
+	rpcclient.Log.Info("DoVanillaProof 2")
 	var skipped [][]byte
 	for _,eachskip := range skip{
 		buf := new(bytes.Buffer)
@@ -69,6 +71,7 @@ func (sb *WindowPoSt) DoVanillaProof(req rpcclient.WindowPoStRequest, res *rpccl
 		skipped = append(skipped,buf.Bytes())
 	}
 
+	rpcclient.Log.Info("DoVanillaProof 3")
 	res.VanillaProof = postproofs
 	res.Index = req.Index
 	res.Skipped = skipped
@@ -182,6 +185,7 @@ func (s *CheckSectors)CheckSector(req rpcclient.CheckSectorsRequest, res *rpccli
 	rst := abi.RegisteredSealProof(req.Regitype)
 
 	checkedlocalbad, err := s.faulttracker.CheckProvable(context.Background(),rst,tocheck)
+	rpcclient.Log.Info("==================checkedlocalbad======================",checkedlocalbad,err)
 	if err != nil {
 		return err
 	}

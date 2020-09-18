@@ -39,6 +39,7 @@ func (s *WindowPoStScheduler) failPost(deadline *miner.DeadlineInfo) {
 func (s *WindowPoStScheduler) doPost(ctx context.Context, deadline *miner.DeadlineInfo, ts *types.TipSet) {
 	ctx, abort := context.WithCancel(ctx)
     log.Info("=========",color.YellowString("%s", "Start doPost"),"==============")
+	log.Info(color.YellowString("%s", "doPost : doPost"))
 	s.abort = abort
 	s.activeDeadline = deadline
 
@@ -67,56 +68,35 @@ func (s *WindowPoStScheduler) doPost(ctx context.Context, deadline *miner.Deadli
 }
 
 func (s *WindowPoStScheduler) checkSectors(ctx context.Context, check abi.BitField) (abi.BitField, error) {
+	log.Info(color.YellowString("%s", "checkSectors : check"))
+
 	spt, err := s.proofType.RegisteredSealProof()
 	if err != nil {
 		return bitfield.BitField{}, xerrors.Errorf("getting seal proof type: %w", err)
 	}
 
-//	mid, err := address.IDFromAddress(s.actor)
-//	if err != nil {
-//		return bitfield.BitField{}, err
-//	}
-////////////
-//	sectors := make(map[abi.SectorID]struct{})
-//	var tocheck []abi.SectorID
-//	err = check.ForEach(func(snum uint64) error {
-//		s := abi.SectorID{
-//			Miner:  abi.ActorID(mid),
-//			Number: abi.SectorNumber(snum),
-//		}
-//
-//		tocheck = append(tocheck, s)
-//		sectors[s] = struct{}{}               //////////////
-//		return nil
-//	})
-//	if err != nil {
-//		return bitfield.BitField{}, xerrors.Errorf("iterating over bitfield: %w", err)
-//	}
-/////////
-    bad  := bitfield.New()
-	ips,_ := s.ids.GetAllIp()
+    bad := bitfield.New()
+
+	ips,err := s.ids.GetAllIp()
+	if err != nil {
+		return bitfield.BitField{},err
+	}
+
+	log.Info("check sectors ips",ips)
     for _,ip := range ips{
 		eachbad,_ := SendMsg(check,spt,ip)
 		bad,_ = bitfield.MergeBitFields(bad,eachbad)
 	}
-	toreturn,_ := bitfield.SubtractBitField(check,bad)
+
+	toreturn,err := bitfield.SubtractBitField(check,bad)
+	if err != nil {
+		return bitfield.BitField{},err
+	}
+
+	b,_ := toreturn.All(50)
+	log.Info("check sectors toreturn",b)
+
 	return toreturn, nil
-	//bad, err := s.faultTracker.CheckProvable(ctx, spt, tocheck)
-	//if err != nil {
-	//	return bitfield.BitField{}, xerrors.Errorf("checking provable sectors: %w", err)
-	//}
-	//for _, id := range bad {
-	//	delete(sectors, id)
-	//}
-	//
-	//log.Warnw("Checked sectors", "checked", len(tocheck), "good", len(sectors))
-	//
-	//sbf := bitfield.New()
-	//for s := range sectors {
-	//	sbf.Set(uint64(s.Number))
-	//}
-	//
-	//return sbf, nil
 }
 
 func (s *WindowPoStScheduler) checkNextRecoveries(ctx context.Context, dlIdx uint64, partitions []*miner.Partition) error {
@@ -219,7 +199,7 @@ func (s *WindowPoStScheduler) checkNextFaults(ctx context.Context, dlIdx uint64,
 	}
 
 	bad := uint64(0)
-
+	log.Info("partitions ",partitions)
 	for partIdx, partition := range partitions {
 		toCheck, err := partition.ActiveSectors()
 		if err != nil {
@@ -347,6 +327,7 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di miner.DeadlineInfo
 	sidToPart := map[abi.SectorNumber]uint64{}
 	skipCount := uint64(0)
 
+	log.Info("partitions ",partitions)
 	for partIdx, partition := range partitions {
 		// TODO: Can do this in parallel
 		toProve, err := partition.ActiveSectors()
@@ -398,6 +379,7 @@ func (s *WindowPoStScheduler) runPost(ctx context.Context, di miner.DeadlineInfo
 
 	if len(sinfos) == 0 {
 		// nothing to prove..
+		log.Info("partitions errNoPartitions")
 		return nil, errNoPartitions
 	}
 
@@ -566,12 +548,14 @@ func SendMsg(tocheck abi.BitField, regtype abi.RegisteredSealProof, ip string) (
 		return bitfield.BitField{}, err
 	}
 
-	res,err := rpcclient.RpcCallCheck(rpcclient.CheckSectorsRequest{Toproof: buf2.Bytes(), Regitype: uint64(regtype)})
+	res,err := rpcclient.RpcCallCheck(rpcclient.CheckSectorsRequest{Toproof: buf2.Bytes(), Regitype: uint64(regtype)},ip)
+	log.Info("===SendMsg===,",res,err)
 	if err != nil {
 		return bitfield.BitField{}, err
 	}
 
-	ids := make([]abi.SectorID,1)
+	var ids []abi.SectorID
+	log.Info("===SendMsg==res.Bad=,",res.Bad , ids)
 	for _,each := range res.Bad{
 		var v abi.SectorID
 		if err = v.UnmarshalCBOR(bytes.NewBuffer(each)); err != nil {
@@ -584,6 +568,6 @@ func SendMsg(tocheck abi.BitField, regtype abi.RegisteredSealProof, ip string) (
 	for _,each := range ids {
 		idsbit.Set(uint64(each.Number))
 	}
-
+	log.Info("===SendMsg==idsbit=,",idsbit)
 	return idsbit, nil
 }

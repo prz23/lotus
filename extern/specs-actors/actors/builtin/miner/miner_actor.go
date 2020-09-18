@@ -2113,6 +2113,7 @@ func assignProvingPeriodOffset(myAddr addr.Address, currEpoch abi.ChainEpoch, ha
 	}
 
 	offset = offset % uint64(WPoStProvingPeriod)
+	//offset= 20
 	return abi.ChainEpoch(offset), nil
 }
 
