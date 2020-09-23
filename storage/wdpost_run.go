@@ -93,7 +93,10 @@ func (s *WindowPoStScheduler) checkSectors(ctx context.Context, check abi.BitFie
 		return bitfield.BitField{},err
 	}
 
-	b,_ := toreturn.All(50)
+	b,err := toreturn.All(50)
+	if err != nil {
+		return bitfield.BitField{},err
+	}
 	log.Info("check sectors toreturn",b)
 
 	return toreturn, nil

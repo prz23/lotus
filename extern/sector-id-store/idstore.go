@@ -20,8 +20,6 @@ type SectorIpRecord interface {
 	GetAllIp() ([]string,error)
 }
 
-//map[SectorId]SlaveIP
-
 type SectorIdStore struct {
 	ds   datastore.Datastore
 	idip datastore.Key
@@ -37,19 +35,19 @@ func StartIdIpStore(ds dtypes.MetadataDS) SectorIpRecord {
 func NewIdIpStore(ds dtypes.MetadataDS, name datastore.Key, name2 datastore.Key, name3 datastore.Key) *SectorIdStore {
 	has, _ := ds.Has(name)
 	if has {
-		return &SectorIdStore{ds: ds, idip: name, btf:name2, allip: name3}
+		return &SectorIdStore{ds: ds, idip: name, btf: name2, allip: name3}
 	}
-//
+
 	mapa := make(map[SectorId]SlaveIP)
 	buf , _ := json.Marshal(mapa)
 	size := len(buf)
 	_ = ds.Put(name, buf[:size])
-//
+
 	ipcollections := make(map[string]bool)
 	buf2 , _ := json.Marshal(ipcollections)
 	size2 := len(buf2)
 	_ = ds.Put(name3, buf2[:size2])
-	return &SectorIdStore{ds: ds, idip: name, btf:name2, allip: name3}
+	return &SectorIdStore{ds: ds, idip: name, btf: name2, allip: name3}
 }
 
 func (sc *SectorIdStore) Insert(id SectorId,ip SlaveIP) error{
@@ -69,7 +67,10 @@ func (sc *SectorIdStore) Insert(id SectorId,ip SlaveIP) error{
 		}
 
 		data[id] = ip
-        _ = sc.saveip(string(ip))
+        err = sc.saveip(string(ip))
+		if err != nil {
+			return  err
+		}
 
 		buf ,err := json.Marshal(data)
 		if err != nil {

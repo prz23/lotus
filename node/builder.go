@@ -297,9 +297,7 @@ func Online() Option {
 			Override(new(stores.LocalStorage), From(new(repo.LockedRepo))),
 			Override(new(sealing.SectorIDCounter), modules.SectorIDCounter),
 
-			// SectorIpRecord
 			Override(new(sealing.SectorRecord), modules.SectorsRecord),
-			// sectorIds & ip store
 			Override(new(idstore.SectorIpRecord),idstore.StartIdIpStore),
 
 			Override(new(*sectorstorage.Manager), modules.SectorStorage),
@@ -308,9 +306,7 @@ func Online() Option {
 			Override(new(sectorstorage.SectorManager), From(new(*sectorstorage.Manager))),
 			Override(new(storage2.Prover), From(new(sectorstorage.SectorManager))),
 
-			// both master & slave start a rpc server   it start the rpc server
 			Override(RpcKey, umrpc.NewStartMasterRpc),
-			// only slave register to the master , it return the SectorIDCounter Offset
 			Override(new(rpcclient.Offset),rpcclient.RegisterToMasterSidOffset),
 
 			Override(new(*sectorblocks.SectorBlocks), sectorblocks.NewSectorBlocks),
