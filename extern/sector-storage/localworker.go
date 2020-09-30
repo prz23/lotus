@@ -13,7 +13,7 @@ import (
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 	"github.com/filecoin-project/go-state-types/abi"
-	storage2 "github.com/filecoin-project/specs-storage/storage"
+	storage2 "github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/lotus/extern/sector-storage/sealtasks"
@@ -92,7 +92,7 @@ func (l *localWorkerPathProvider) AcquireSector(ctx context.Context, sector abi.
 }
 
 func (l *LocalWorker) sb() (ffiwrapper.Storage, error) {
-	return ffiwrapper.New(&localWorkerPathProvider{w: l}, l.scfg)
+	return ffiwrapper.New(&localWorkerPathProvider{w: l}, l.scfg, nil)
 }
 
 func (l *LocalWorker) NewSector(ctx context.Context, sector abi.SectorID) error {

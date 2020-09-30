@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	"time"
 
 	miner0 "github.com/filecoin-project/specs-actors/actors/builtin/miner"
@@ -25,7 +26,7 @@ import (
 	"github.com/filecoin-project/go-state-types/crypto"
 	sectorstorage "github.com/filecoin-project/lotus/extern/sector-storage"
 	"github.com/filecoin-project/lotus/extern/sector-storage/ffiwrapper"
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/build"
@@ -57,6 +58,8 @@ type Miner struct {
 	sealing       *sealing.Sealing
 
 	sealingEvtType journal.EventType
+
+	sr     sealing.SectorRecord
 }
 
 // SealingStateEvt is a journal event that records a sector state transition.
@@ -110,7 +113,17 @@ type storageMinerApi interface {
 	WalletHas(context.Context, address.Address) (bool, error)
 }
 
-func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig) (*Miner, error) {
+func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, ds datastore.Batching, sealer sectorstorage.SectorManager, sc sealing.SectorIDCounter, verif ffiwrapper.Verifier, gsd dtypes.GetSealingConfigFunc, feeCfg config.MinerFeeConfig, offset rpcclient.Offset, sr sealing.SectorRecord) (*Miner, error) {
+	if uint64(offset) == 0 {
+		log.Info("Already Registered, use stored SectorCounter")
+	}else {
+		err := sc.Offset(uint64(offset))
+		if err != nil {
+			log.Info("Err set offset ")
+		}else {
+			log.Info("[NewMiner] SectorCount Offset Set to",uint64(offset))
+		}
+	}
 	m := &Miner{
 		api:    api,
 		feeCfg: feeCfg,
@@ -124,6 +137,8 @@ func NewMiner(api storageMinerApi, maddr, worker address.Address, h host.Host, d
 		worker:         worker,
 		getSealConfig:  gsd,
 		sealingEvtType: journal.J.RegisterEventType("storage", "sealing_states"),
+
+		sr:     sr,
 	}
 
 	return m, nil
@@ -148,7 +163,7 @@ func (m *Miner) Run(ctx context.Context) error {
 	adaptedAPI := NewSealingAPIAdapter(m.api)
 	// TODO: Maybe we update this policy after actor upgrades?
 	pcp := sealing.NewBasicPreCommitPolicy(adaptedAPI, miner0.MaxSectorExpirationExtension-(miner0.WPoStProvingPeriod*2), md.PeriodStart%miner0.WPoStProvingPeriod)
-	m.sealing = sealing.New(adaptedAPI, fc, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, &pcp, sealing.GetSealingConfigFunc(m.getSealConfig), m.handleSealingNotifications)
+	m.sealing = sealing.New(adaptedAPI, fc, NewEventsAdapter(evts), m.maddr, m.ds, m.sealer, m.sc, m.verif, &pcp, sealing.GetSealingConfigFunc(m.getSealConfig),m.sr)
 
 	go m.sealing.Run(ctx) //nolint:errcheck // logged intside the function
 

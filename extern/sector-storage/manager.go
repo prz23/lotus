@@ -3,6 +3,8 @@ package sectorstorage
 import (
 	"context"
 	"errors"
+	ffi "github.com/filecoin-project/filecoin-ffi"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"io"
 	"net/http"
 
@@ -13,7 +15,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/ffiwrapper"
 	"github.com/filecoin-project/lotus/extern/sector-storage/fsutil"
@@ -56,7 +58,7 @@ type SectorManager interface {
 	ReadPiece(context.Context, io.Writer, abi.SectorID, storiface.UnpaddedByteIndex, abi.UnpaddedPieceSize, abi.SealRandomness, cid.Cid) error
 
 	ffiwrapper.StorageSealer
-	storage.Prover
+	storage.ProverPlus
 	FaultTracker
 }
 
@@ -73,7 +75,7 @@ type Manager struct {
 
 	sched *scheduler
 
-	storage.Prover
+	storage.ProverPlus
 }
 
 type SealerConfig struct {
@@ -89,13 +91,13 @@ type SealerConfig struct {
 
 type StorageAuth http.Header
 
-func New(ctx context.Context, ls stores.LocalStorage, si stores.SectorIndex, cfg *ffiwrapper.Config, sc SealerConfig, urls URLs, sa StorageAuth) (*Manager, error) {
+func New(ctx context.Context, ls stores.LocalStorage, si stores.SectorIndex, cfg *ffiwrapper.Config, sc SealerConfig, urls URLs, sa StorageAuth, ids idstore.SectorIpRecord) (*Manager, error) {
 	lstor, err := stores.NewLocal(ctx, ls, si, urls)
 	if err != nil {
 		return nil, err
 	}
 
-	prover, err := ffiwrapper.New(&readonlyProvider{stor: lstor, index: si}, cfg)
+	prover, err := ffiwrapper.New(&readonlyProvider{stor: lstor, index: si}, cfg , ids)
 	if err != nil {
 		return nil, xerrors.Errorf("creating prover instance: %w", err)
 	}
@@ -113,7 +115,7 @@ func New(ctx context.Context, ls stores.LocalStorage, si stores.SectorIndex, cfg
 
 		sched: newScheduler(cfg.SealProofType),
 
-		Prover: prover,
+		ProverPlus: prover,
 	}
 
 	go m.sched.runSched()
@@ -519,3 +521,15 @@ func (m *Manager) Close(ctx context.Context) error {
 }
 
 var _ SectorManager = &Manager{}
+
+
+func (m *Manager)GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+    log.Info("GenerateWindowPoStPlus")
+	return m.ProverPlus.GenerateWindowPoStPlus(ctx,minerID,sectorInfo,randomness)
+}
+func (m *Manager)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+	return m.ProverPlus.GenerateWindowPoStVanilla(ctx,minerID,sectorInfo,randomness,index)
+}
+func (m *Manager)GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+	return m.ProverPlus.GenerateWindowPoStSnark(ctx,minerID,sectorInfo,randomness,proofs,index)
+}

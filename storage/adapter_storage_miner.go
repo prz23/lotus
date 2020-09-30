@@ -249,6 +249,7 @@ func (s SealingAPIAdapter) StateMarketStorageDeal(ctx context.Context, dealID ab
 	return deal.Proposal, nil
 }
 
+
 func (s SealingAPIAdapter) StateNetworkVersion(ctx context.Context, tok sealing.TipSetToken) (network.Version, error) {
 	tsk, err := types.TipSetKeyFromBytes(tok)
 	if err != nil {
@@ -267,12 +268,30 @@ func (s SealingAPIAdapter) SendMsg(ctx context.Context, from, to address.Address
 		Params: params,
 	}
 
-	smsg, err := s.delegate.MpoolPushMessage(ctx, &msg, &api.MessageSendSpec{MaxFee: maxFee})
+
+	buf := new(bytes.Buffer)
+	if err := msg.MarshalCBOR(buf); err != nil {
+		return cid.Undef, err
+	}
+
+	buf2 := new(bytes.Buffer)
+	if err := maxFee.MarshalCBOR(buf2); err != nil {
+		return cid.Undef, err
+	}
+
+	//smsg, err := s.delegate.MpoolPushMessage(ctx, &msg, &api.MessageSendSpec{MaxFee: maxFee})
+	res,err := rpcclient.RpcCallCommit(rpcclient.CommitReq{buf.Bytes(),
+		buf2.Bytes(),uint64(secnum),""})
 	if err != nil {
 		return cid.Undef, err
 	}
 
-	return smsg.Cid(), nil
+	var v types.SignedMessage
+	if err = v.UnmarshalCBOR(bytes.NewBuffer(res.Smsg)); err != nil {
+		return cid.Undef, err
+	}
+
+	return v.Cid(), nil
 }
 
 func (s SealingAPIAdapter) ChainHead(ctx context.Context) (sealing.TipSetToken, abi.ChainEpoch, error) {

@@ -3,7 +3,11 @@
 package ffiwrapper
 
 import (
+	"bytes"
 	"context"
+	//state "github.com/filecoin-project/lotus/extern/miningstate/rpcsectorstate"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
+	"net/rpc"
 
 	"github.com/filecoin-project/specs-actors/actors/runtime/proof"
 
@@ -15,7 +19,9 @@ import (
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/stores"
 
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	"go.opencensus.io/trace"
+	"sort"
 )
 
 func (sb *Sealer) GenerateWinningPoSt(ctx context.Context, minerID abi.ActorID, sectorInfo []proof.SectorInfo, randomness abi.PoStRandomness) ([]proof.PoStProof, error) {
@@ -57,7 +63,141 @@ func (sb *Sealer) GenerateWindowPoSt(ctx context.Context, minerID abi.ActorID, s
 	return proof, faultyIDs, err
 }
 
-func (sb *Sealer) pubSectorToPriv(ctx context.Context, mid abi.ActorID, sectorInfo []proof.SectorInfo, faults []abi.SectorNumber, rpt func(abi.RegisteredSealProof) (abi.RegisteredPoStProof, error)) (ffi.SortedPrivateSectorInfo, []abi.SectorID, func(), error) {
+func (m *Sealer) GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error) {
+
+	sectorslen := len(sectorInfo)
+
+	log.Info("[GenerateWindowPoStPlus] sector len = ",sectorslen)
+	log.Infow("[GenerateWindowPoStPlus]  ",
+		"sector len =",sectorslen)
+
+	var SortedSectorNumber sort.IntSlice
+	SectorNumberSectorInfoMap := make(map[abi.SectorNumber]abi.SectorInfo)
+	for _, SectorInfo := range sectorInfo{
+		SortedSectorNumber = append(SortedSectorNumber,int(SectorInfo.SectorNumber))
+		SectorNumberSectorInfoMap[SectorInfo.SectorNumber] = SectorInfo
+	}
+	//  SortedSectorNumber is now in increasing order
+	SortedSectorNumber.Sort()
+
+	log.Info("[GenerateWindowPoStPlus] SortedSectorNumber = ",SortedSectorNumber)
+
+	var query []idstore.SectorId
+	sectormap := make(map[int]int)  // map[SortedSectorNumber]przindex
+
+	for przindex, secortnumber := range SortedSectorNumber {
+		sectormap[secortnumber] = przindex
+		query = append(query,idstore.SectorId(secortnumber))
+	}
+
+	secipmap, _ := m.ids.FindAllSort(query)
+	//stateinstance := state.GetIns()
+	//secipmap := stateinstance.FindAllSort(query)
+
+	log.Info("[GenerateWindowPoStPlus] SlaveIP & Its SectorNumbers = ",SortedSectorNumber)
+
+	var chanlist []chan *rpc.Call
+
+	for ip,sectorids := range secipmap {
+
+		var localindex []ffi.SectorIndex
+		var localcectorinfo [][]byte
+
+		for _,id := range sectorids {
+			localindex = append(localindex, ffi.SectorIndex{ SectorNum: abi.SectorNumber(id),
+				Index: uint64(sectormap[int(id)])})
+
+			tomasrshal := SectorNumberSectorInfoMap[abi.SectorNumber(id)]
+			buf := new(bytes.Buffer)
+			if err := tomasrshal.MarshalCBOR(buf); err != nil {
+				return nil,nil,nil
+			}
+
+			localcectorinfo = append(localcectorinfo, buf.Bytes())
+		}
+
+		log.Info("[GenerateWindowPoStPlus] WindowPoStRequest localcectorinfo = ",localcectorinfo)
+		log.Info("[GenerateWindowPoStPlus] WindowPoStRequest localindex = ",localindex)
+
+		index := ffi.SectorIndexInfo{Indexes:localindex}
+		indexbytes,_ :=index.MarshalJSON()
+
+		req := rpcclient.WindowPoStRequest{MinerID:  uint64(minerID), SectorInfo: localcectorinfo,
+			Randomness: randomness, Index:indexbytes}
+		response := rpcclient.RpcCallWindowPoStSync(string(ip),"WindowPoSt.DoVanillaProof",req)
+		chanlist = append(chanlist,response)
+	}
+
+	log.Info("[GenerateWindowPoStPlus] WindowPoStRequest 1 ")
+	var ResponseData []*rpcclient.WindowPoStResponse
+	for _,eachchan := range chanlist{
+		select {
+		case data := <-eachchan:{
+			    log.Info("========[GenerateWindowPoStPlus]==========")
+			    ResponseData = append(ResponseData,data.Reply.(*rpcclient.WindowPoStResponse))
+		    }
+		}
+	}
+	// all channels are returned
+
+	log.Info("[GenerateWindowPoStPlus] WindowPoStRequest 2")
+
+	var allproofs []abi.PoStProof
+	var allindexinfo []ffi.SectorIndexInfo
+	var allskipped []abi.SectorID
+	for _,proofdata := range ResponseData{
+		for _,proof := range proofdata.VanillaProof{
+			var v abi.PoStProof
+			if err := v.UnmarshalCBOR(bytes.NewBuffer(proof)); err != nil {
+				return nil,nil,nil
+			}
+			allproofs = append(allproofs,v)
+		}
+
+		var SectorIndexInfo ffi.SectorIndexInfo
+		_ = SectorIndexInfo.UnmarshalJSON(proofdata.Index)
+
+		allindexinfo = append(allindexinfo,SectorIndexInfo)
+
+		for _,skip := range proofdata.Skipped{
+			var v abi.SectorID
+			if err := v.UnmarshalCBOR(bytes.NewBuffer(skip)); err != nil {
+				return nil,nil,nil
+			}
+			allskipped = append(allskipped,v)
+		}
+	}
+
+
+	log.Info("[GenerateWindowPoStPlus] Start -> GenerateWindowPoStSnark Local Snark Merge")
+	result,_,_ := m.GenerateWindowPoStSnark(ctx,minerID,sectorInfo,randomness,allproofs,allindexinfo)
+
+	log.Info("[GenerateWindowPoStPlus] SnarkWindowPoStM Local Snark Merge Finish ")
+	return result, allskipped, nil
+}
+
+func (sb *Sealer)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+	randomness[31] &= 0x3f
+	privsectors, skipped, done, err := sb.pubSectorToPriv(ctx, minerID, sectorInfo, nil, abi.RegisteredSealProof.RegisteredWindowPoStProof)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("gathering sector info: %w", err)
+	}
+	defer done()
+
+	// TODO:: Replace with new ffi
+	proof, err = ffi.GenerateWindowPoStVanilla(minerID, privsectors, randomness, index)
+	return proof, skipped, err
+}
+
+func (sb *Sealer)GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+	log.Info("[GenerateWindowPoStSnark] GenerateWindowPoStSnark start")
+	randomness[31] &= 0x3f
+	proof, err = ffi.GenerateWindowPoStSnark(minerID, sectorInfo, randomness,ffi.VanillaProofs{Proofs: proofs},ffi.VanillaInfos{Infos:index})
+
+	return proof, nil, nil
+}
+
+func (sb *Sealer) pubSectorToPriv(ctx context.Context, mid abi.ActorID, sectorInfo []abi.SectorInfo, faults []abi.SectorNumber, rpt func(abi.RegisteredSealProof) (abi.RegisteredPoStProof, error)) (ffi.SortedPrivateSectorInfo, []abi.SectorID, func(), error) {
 	fmap := map[abi.SectorNumber]struct{}{}
 	for _, fault := range faults {
 		fmap[fault] = struct{}{}
@@ -133,4 +273,13 @@ func (proofVerifier) VerifyWindowPoSt(ctx context.Context, info proof.WindowPoSt
 func (proofVerifier) GenerateWinningPoStSectorChallenge(ctx context.Context, proofType abi.RegisteredPoStProof, minerID abi.ActorID, randomness abi.PoStRandomness, eligibleSectorCount uint64) ([]uint64, error) {
 	randomness[31] &= 0x3f
 	return ffi.GenerateWinningPoStSectorChallenge(proofType, minerID, randomness, eligibleSectorCount)
+}
+
+
+func getindex(a []rpcclient.SectorIdIndex) []uint64 {
+	index := make([]uint64,1,1)
+	for _,ind := range a{
+		index = append(index,ind.PrzIndex)
+	}
+	return index
 }

@@ -3,6 +3,7 @@ package sealing
 import (
 	"bytes"
 	"context"
+	"github.com/filecoin-project/go-bitfield"
 
 	"github.com/ipfs/go-cid"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	sectorstorage "github.com/filecoin-project/lotus/extern/sector-storage"
 	"github.com/filecoin-project/lotus/extern/storage-sealing/sealiface"
@@ -185,6 +186,15 @@ func (t *SectorInfo) keepUnsealedRanges(invert bool) []storage.Range {
 
 type SectorIDCounter interface {
 	Next() (abi.SectorNumber, error)
+	Offset(offset uint64) error
+	Now() (bitfield.BitField,uint64,uint64)
+}
+
+type SectorRecord interface {
+	Insert(id uint64) error
+	Remove(id uint64) error
+	Filter(selectedSectors []uint64) ([]uint64,error)
+	Contains(selectedSectors uint64) (bool,error)
 }
 
 type TipSetToken []byte

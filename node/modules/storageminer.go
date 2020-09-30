@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/filecoin-project/go-bitfield"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
+	filter "github.com/filecoin-project/lotus/extern/winsector-filter"
+	cid "github.com/ipfs/go-cid/_rsrch/cidiface"
 	"net/http"
 	"time"
 
@@ -142,11 +147,43 @@ func (s *sidsc) Next() (abi.SectorNumber, error) {
 	return abi.SectorNumber(i), err
 }
 
+func (s *sidsc) Offset(offset uint64) error {
+	return s.sc.Offset(offset)
+}
+
+func (s *sidsc)Now() (bitfield.BitField,uint64,uint64){
+	return s.sc.Now()
+}
+
 func SectorIDCounter(ds dtypes.MetadataDS) sealing.SectorIDCounter {
 	sc := storedcounter.New(ds, datastore.NewKey(StorageCounterDSPrefix))
 	return &sidsc{sc}
 }
 
+type sectRe struct {
+	sc *filter.LocalSectorRecord
+}
+
+func (s *sectRe)Insert(id uint64) error {
+	return s.sc.Insert(id)
+}
+
+func (s *sectRe)Remove(id uint64) error {
+	return s.sc.Remove(id)
+}
+
+func (s *sectRe)Filter(selectedSectors []uint64) ([]uint64,error) {
+	return s.sc.Filter(selectedSectors)
+}
+
+func (s *sectRe)Contains(selectedSectors uint64) (bool,error) {
+	return s.sc.Contains(selectedSectors)
+}
+
+func SectorsRecord(ds dtypes.MetadataDS) sealing.SectorRecord {
+	sc := filter.New(ds,datastore.NewKey("SectorsRecord"))
+	return &sectRe{sc}
+}
 type StorageMinerParams struct {
 	fx.In
 
@@ -159,6 +196,9 @@ type StorageMinerParams struct {
 	SectorIDCounter    sealing.SectorIDCounter
 	Verifier           ffiwrapper.Verifier
 	GetSealingConfigFn dtypes.GetSealingConfigFunc
+	offset             rpcclient.Offset
+	sr                 sealing.SectorRecord
+	ids                idstore.SectorIpRecord
 }
 
 func StorageMiner(fc config.MinerFeeConfig) func(params StorageMinerParams) (*storage.Miner, error) {
@@ -173,6 +213,9 @@ func StorageMiner(fc config.MinerFeeConfig) func(params StorageMinerParams) (*st
 			sc     = params.SectorIDCounter
 			verif  = params.Verifier
 			gsd    = params.GetSealingConfigFn
+			offset = params.offset
+			sr     = params.sr
+			ids    = params.ids
 		)
 
 		maddr, err := minerAddrFromDS(ds)
@@ -192,12 +235,12 @@ func StorageMiner(fc config.MinerFeeConfig) func(params StorageMinerParams) (*st
 			return nil, err
 		}
 
-		fps, err := storage.NewWindowedPoStScheduler(api, fc, sealer, sealer, maddr, worker)
+		fps, err := storage.NewWindowedPoStScheduler(api, fc, sealer, sealer, maddr, worker, ids)
 		if err != nil {
 			return nil, err
 		}
 
-		sm, err := storage.NewMiner(api, maddr, worker, h, ds, sealer, sc, verif, gsd, fc)
+		sm, err := storage.NewMiner(api, maddr, worker, h, ds, sealer, sc, verif, gsd, fc, offset, sr)
 		if err != nil {
 			return nil, err
 		}
@@ -340,13 +383,13 @@ func StagingGraphsync(mctx helpers.MetricsCtx, lc fx.Lifecycle, ibs dtypes.Stagi
 	return gs
 }
 
-func SetupBlockProducer(lc fx.Lifecycle, ds dtypes.MetadataDS, api lapi.FullNode, epp gen.WinningPoStProver, sf *slashfilter.SlashFilter) (*miner.Miner, error) {
+func SetupBlockProducer(lc fx.Lifecycle, ds dtypes.MetadataDS, api lapi.FullNode, epp gen.WinningPoStProver, sf *slashfilter.SlashFilter, sr sealing.SectorRecord) (*miner.Miner, error) {
 	minerAddr, err := minerAddrFromDS(ds)
 	if err != nil {
 		return nil, err
 	}
 
-	m := miner.NewMiner(api, epp, minerAddr, sf)
+	m := miner.NewMiner(api, epp, minerAddr, sf, sr)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -518,10 +561,10 @@ func RetrievalProvider(h host.Host, miner *storage.Miner, sealer sectorstorage.S
 	return retrievalimpl.NewProvider(maddr, adapter, netwk, pieceStore, mds, dt, namespace.Wrap(ds, datastore.NewKey("/retrievals/provider")), opt)
 }
 
-func SectorStorage(mctx helpers.MetricsCtx, lc fx.Lifecycle, ls stores.LocalStorage, si stores.SectorIndex, cfg *ffiwrapper.Config, sc sectorstorage.SealerConfig, urls sectorstorage.URLs, sa sectorstorage.StorageAuth) (*sectorstorage.Manager, error) {
+func SectorStorage(mctx helpers.MetricsCtx, lc fx.Lifecycle, ls stores.LocalStorage, si stores.SectorIndex, cfg *ffiwrapper.Config, sc sectorstorage.SealerConfig, urls sectorstorage.URLs, sa sectorstorage.StorageAuth, ids idstore.SectorIpRecord) (*sectorstorage.Manager, error) {
 	ctx := helpers.LifecycleCtx(mctx, lc)
 
-	sst, err := sectorstorage.New(ctx, ls, si, cfg, sc, urls, sa)
+	sst, err := sectorstorage.New(ctx, ls, si, cfg, sc, urls, sa, ids)
 	if err != nil {
 		return nil, err
 	}

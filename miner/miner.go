@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	sealing "github.com/filecoin-project/lotus/extern/storage-sealing"
 	"sync"
 	"time"
 
@@ -49,7 +50,7 @@ func randTimeOffset(width time.Duration) time.Duration {
 	return val - (width / 2)
 }
 
-func NewMiner(api api.FullNode, epp gen.WinningPoStProver, addr address.Address, sf *slashfilter.SlashFilter) *Miner {
+func NewMiner(api api.FullNode, epp gen.WinningPoStProver, addr address.Address, sf *slashfilter.SlashFilter, sr sealing.SectorRecord) *Miner {
 	arc, err := lru.NewARC(10000)
 	if err != nil {
 		panic(err)
@@ -73,6 +74,7 @@ func NewMiner(api api.FullNode, epp gen.WinningPoStProver, addr address.Address,
 
 		sf:                sf,
 		minedBlockHeights: arc,
+		sr: sr,
 		evtTypes: [...]journal.EventType{
 			evtTypeBlockMined: journal.J.RegisterEventType("miner", "block_mined"),
 		},
@@ -97,6 +99,8 @@ type Miner struct {
 	minedBlockHeights *lru.ARCCache
 
 	evtTypes [1]journal.EventType
+
+	sr       sealing.SectorRecord
 }
 
 func (m *Miner) Address() address.Address {
@@ -367,6 +371,22 @@ func (m *Miner) mineOne(ctx context.Context, base *MiningBase) (*types.BlockMsg,
 		return nil, nil
 	}
 
+	// Select Local Sealed Sectors
+    toProof := make([]abi.SectorInfo,0,1)
+	for _,each := range mbi.Sectors{
+		b, _ := m.sr.Contains(uint64(each.SectorNumber))
+		log.Info("mineOne each.SectorNumber:",each.SectorNumber)
+		if b == true{
+			toProof = append(toProof,each)
+		}
+	}
+	if len(toProof) == 0 {
+		log.Info("mineOne: no local sectors selected")
+
+		//time.Sleep(1*time.Second)
+		return nil, nil
+	}
+
 	tMBI := build.Clock.Now()
 
 	beaconPrev := mbi.PrevBeaconEntry
@@ -413,7 +433,7 @@ func (m *Miner) mineOne(ctx context.Context, base *MiningBase) (*types.BlockMsg,
 
 	tSeed := build.Clock.Now()
 
-	postProof, err := m.epp.ComputeProof(ctx, mbi.Sectors, prand)
+	postProof, err := m.epp.ComputeProof(ctx, toProof/*mbi.Sectors*/, prand)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to compute winning post proof: %w", err)
 	}
@@ -534,6 +554,16 @@ func (c *cachedActorLookup) StateGetActor(ctx context.Context, a address.Address
 		}
 	}
 	return e, err
+}
+
+func extractInfo(in []abi.SectorInfo) ([]uint64,[]int) {
+	filteredNumbers := make([]uint64,1,1)
+	filteredIndex := make([]int,1,1)
+	for index,each := range in {
+		filteredNumbers = append(filteredNumbers,uint64(each.SectorNumber))
+		filteredIndex = append(filteredIndex,index)
+	}
+	return filteredNumbers,filteredIndex
 }
 
 type ActorLookup func(context.Context, address.Address, types.TipSetKey) (*types.Actor, error)

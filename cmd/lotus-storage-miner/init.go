@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -113,6 +114,14 @@ var initCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:  "from",
 			Usage: "select which address to send actor creation message from",
+		},
+		&cli.StringFlag{
+			Name:  "miner-address-fake",
+			Usage: "",
+		},
+		&cli.StringFlag{
+			Name:  "masterip",
+			Usage: "",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -411,6 +420,8 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		return xerrors.Errorf("peer ID from private key: %w", err)
 	}
 
+	log.Info("storageMinerInit: peer id is ",peerid)
+
 	mds, err := lr.Datastore("/metadata")
 	if err != nil {
 		return err
@@ -452,7 +463,7 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 				AllowPreCommit2:    true,
 				AllowCommit:        true,
 				AllowUnseal:        true,
-			}, nil, sa)
+			}, nil, sa, nil)
 			if err != nil {
 				return err
 			}
@@ -468,6 +479,20 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 			}
 
 			m := miner.NewMiner(api, epp, a, slashfilter.New(mds))
+			//add SectorsRecord
+			sr := modules.SectorsRecord(mds)
+			ids := idstore.StartIdIpStore(mds)
+			if act := cctx.String("miner-address-fake"); act != "" {
+				log.Info("==========NOT gensis init")
+			}else{
+				log.Info("============gensis init insert 1 & 0")
+				err = sr.Insert(uint64(0))
+				err = sr.Insert(uint64(1))
+				ip := cctx.String("masterip")
+				_ = ids.Insert(0, idstore.SlaveIP(ip))
+				_ = ids.Insert(1, idstore.SlaveIP(ip))
+			}
+			m := miner.NewMiner(api, epp, a, slashfilter.New(mds),sr)
 			{
 				if err := m.Start(ctx); err != nil {
 					return xerrors.Errorf("failed to start up genesis miner: %w", err)
@@ -525,6 +550,14 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 		}
 
 		addr = a
+	}
+
+	if act := cctx.String("miner-address-fake"); act != "" {
+		addr, err = address.NewFromString(act)
+		if err != nil{
+			return nil
+		}
+		log.Infof("miner-address-fake: %s", addr)
 	}
 
 	log.Infof("Created new miner: %s", addr)

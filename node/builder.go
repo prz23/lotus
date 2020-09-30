@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"os"
+	umrpc "github.com/filecoin-project/lotus/extern/mining/rpcserver"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"time"
 
 	logging "github.com/ipfs/go-log"
@@ -25,7 +28,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-fil-markets/storagemarket/impl/storedask"
 
-	storage2 "github.com/filecoin-project/specs-storage/storage"
+	storage2 "github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain"
@@ -136,6 +139,8 @@ const (
 	RunPeerTaggerKey
 
 	SetApiEndpointKey
+
+	RpcKey
 
 	_nInvokes // keep this last
 )
@@ -320,11 +325,18 @@ func Online() Option {
 			Override(new(*ffiwrapper.Config), modules.ProofsConfig),
 			Override(new(stores.LocalStorage), From(new(repo.LockedRepo))),
 			Override(new(sealing.SectorIDCounter), modules.SectorIDCounter),
+
+			Override(new(sealing.SectorRecord), modules.SectorsRecord),
+			Override(new(idstore.SectorIpRecord),idstore.StartIdIpStore),
+
 			Override(new(*sectorstorage.Manager), modules.SectorStorage),
 			Override(new(ffiwrapper.Verifier), ffiwrapper.ProofVerifier),
 
 			Override(new(sectorstorage.SectorManager), From(new(*sectorstorage.Manager))),
 			Override(new(storage2.Prover), From(new(sectorstorage.SectorManager))),
+
+			Override(RpcKey, umrpc.NewStartMasterRpc),
+			Override(new(rpcclient.Offset),rpcclient.RegisterToMasterSidOffset),
 
 			Override(new(*sectorblocks.SectorBlocks), sectorblocks.NewSectorBlocks),
 			Override(new(*storage.Miner), modules.StorageMiner(config.DefaultStorageMiner().Fees)),

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	rpctypes "github.com/filecoin-project/lotus/extern/miningstate/types"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -50,6 +51,18 @@ var runCmd = &cli.Command{
 			Usage: "manage open file limit",
 			Value: true,
 		},
+		&cli.StringFlag{
+			Name:  "rpc-address-ma",
+			Usage: "urrpc server address eg 0.0.0.0:5977 ",
+		},
+		&cli.StringFlag{
+			Name:  "rpc-address-local",
+			Usage: "urrpc server address eg 0.0.0.0:5977 ",
+		},
+		&cli.StringFlag{
+			Name:  "rpc-address-role",
+			Usage: "Master/SLAVE",
+		},
 	},
 	Action: func(cctx *cli.Context) error {
 		if !cctx.Bool("enable-gpu-proving") {
@@ -77,8 +90,31 @@ var runCmd = &cli.Command{
 			}
 		}
 
+
 		if v.APIVersion != build.FullAPIVersion {
 			return xerrors.Errorf("lotus-daemon API version doesn't match: expected: %s", api.Version{APIVersion: build.FullAPIVersion})
+        }
+
+	    if v.APIVersion != build.APIVersion {
+			return xerrors.Errorf("lotus-daemon API version doesn't match: local: %s", api.Version{APIVersion: build.APIVersion})
+		}
+		
+		var RpcAddressForLocal rpctypes.LocalServerAddr
+		var RpcAddressForUM rpctypes.RemoteServerAddr
+		var Role rpctypes.Role
+		RoleRpc := cctx.String("rpc-address-role")
+		if RoleRpc != ""{
+			if RoleRpc == "Master"{
+				Role = rpctypes.Role_Master
+				RpcAddressForLocal = rpctypes.LocalServerAddr(cctx.String("rpc-address-local"))
+				RpcAddressForUM = rpctypes.RemoteServerAddr(cctx.String("rpc-address-ma"))
+				log.Info("###########[Master]############Local=",RpcAddressForLocal)
+			}else if RoleRpc == "Slave"{
+				Role = rpctypes.Role_Slave
+				RpcAddressForLocal = rpctypes.LocalServerAddr(cctx.String("rpc-address-local"))
+				RpcAddressForUM = rpctypes.RemoteServerAddr(cctx.String("rpc-address-ma"))
+				log.Info("############[Slave]###########Local=",RpcAddressForLocal,"Connect->",RpcAddressForUM)
+			}
 		}
 
 		log.Info("Checking full node sync status")
@@ -108,6 +144,11 @@ var runCmd = &cli.Command{
 		var minerapi api.StorageMiner
 		stop, err := node.New(ctx,
 			node.StorageMiner(&minerapi),
+			// UM parms
+			node.Override(new(rpctypes.Role),Role),
+			node.Override(new(rpctypes.LocalServerAddr),RpcAddressForLocal),
+			node.Override(new(rpctypes.RemoteServerAddr),RpcAddressForUM),
+
 			node.Override(new(dtypes.ShutdownChan), shutdownChan),
 			node.Online(),
 			node.Repo(r),

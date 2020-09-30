@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"github.com/fatih/color"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -9,7 +11,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/dline"
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/build"
@@ -27,7 +29,7 @@ const StartConfidence = 4 // TODO: config
 type WindowPoStScheduler struct {
 	api              storageMinerApi
 	feeCfg           config.MinerFeeConfig
-	prover           storage.Prover
+	prover           storage.ProverPlus
 	faultTracker     sectorstorage.FaultTracker
 	proofType        abi.RegisteredPoStProof
 	partitionSectors uint64
@@ -37,6 +39,7 @@ type WindowPoStScheduler struct {
 
 	cur *types.TipSet
 
+	ids idstore.SectorIpRecord
 	// if a post is in progress, this indicates for which ElectionPeriodStart
 	activeDeadline *dline.Info
 	abort          context.CancelFunc
@@ -47,7 +50,7 @@ type WindowPoStScheduler struct {
 	// failLk sync.Mutex
 }
 
-func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb storage.Prover, ft sectorstorage.FaultTracker, actor address.Address, worker address.Address) (*WindowPoStScheduler, error) {
+func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb storage.ProverPlus, ft sectorstorage.FaultTracker, actor address.Address, worker address.Address, ids idstore.SectorIpRecord) (*WindowPoStScheduler, error) {
 	mi, err := api.StateMinerInfo(context.TODO(), actor, types.EmptyTSK)
 	if err != nil {
 		return nil, xerrors.Errorf("getting sector size: %w", err)
@@ -68,6 +71,7 @@ func NewWindowedPoStScheduler(api storageMinerApi, fc config.MinerFeeConfig, sb 
 
 		actor:  actor,
 		worker: worker,
+		ids:    ids,
 		evtTypes: [...]journal.EventType{
 			evtTypeWdPoStScheduler:  journal.J.RegisterEventType("wdpost", "scheduler"),
 			evtTypeWdPoStProofs:     journal.J.RegisterEventType("wdpost", "proofs_processed"),
@@ -192,10 +196,12 @@ func (s *WindowPoStScheduler) update(ctx context.Context, new *types.TipSet) err
 	}
 
 	if deadlineEquals(s.activeDeadline, di) {
+		log.Info(color.YellowString("%s", "deadlineEquals : already working on this deadline"))
 		return nil // already working on this deadline
 	}
 
 	if !di.PeriodStarted() {
+		log.Info(color.YellowString("%s", "PeriodStarted : not proving anything yet"))
 		return nil // not proving anything yet
 	}
 

@@ -20,14 +20,17 @@ var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
 }
 
 func init() {
-	policy.SetSupportedProofTypes(abi.RegisteredSealProof_StackedDrg2KiBV1)
-	policy.SetConsensusMinerMinPower(abi.NewStoragePower(2048))
-	policy.SetMinVerifiedDealSize(abi.NewStoragePower(256))
+	power.ConsensusMinerMinPower = big.NewInt(2048)
+	miner.SupportedProofTypes = map[abi.RegisteredSealProof]struct{}{
+		abi.RegisteredSealProof_StackedDrg2KiBV1: {},
+		abi.RegisteredSealProof_StackedDrg8MiBV1: {},
+	}
+	verifreg.MinVerifiedDealSize = big.NewInt(256)
 
 	BuildType |= Build2k
 }
 
-const BlockDelaySecs = uint64(4)
+const BlockDelaySecs = uint64(2)
 
 const PropagationDelaySecs = uint64(1)
 

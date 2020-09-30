@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	"io"
 	"math/bits"
 	"os"
@@ -18,7 +19,7 @@ import (
 	rlepluslazy "github.com/filecoin-project/go-bitfield/rle"
 	commcid "github.com/filecoin-project/go-fil-commcid"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/specs-storage/storage"
+	"github.com/filecoin-project/lotus/extern/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/fr32"
 	"github.com/filecoin-project/lotus/extern/sector-storage/stores"
@@ -28,7 +29,7 @@ import (
 
 var _ Storage = &Sealer{}
 
-func New(sectors SectorProvider, cfg *Config) (*Sealer, error) {
+func New(sectors SectorProvider, cfg *Config, ids idstore.SectorIpRecord) (*Sealer, error) {
 	sectorSize, err := sizeFromConfig(*cfg)
 	if err != nil {
 		return nil, err
@@ -41,6 +42,7 @@ func New(sectors SectorProvider, cfg *Config) (*Sealer, error) {
 		sectors: sectors,
 
 		stopping: make(chan struct{}),
+		ids: ids,
 	}
 
 	return sb, nil
