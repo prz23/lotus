@@ -37,9 +37,9 @@ require (
 	github.com/filecoin-project/go-statestore v0.1.0
 	github.com/filecoin-project/go-storedcounter v0.0.0-20200421200003-1c99c62e8a5b
 	github.com/filecoin-project/specs-actors v0.9.11
-	github.com/filecoin-project/specs-storage v0.1.1-0.20200907031224-ed2e5cd13796
+	github.com/filecoin-project/specs-storage v0.1.1-0.20200907031224-ed2e5cd13796 // indirect
+	github.com/filecoin-project/statediff v0.0.1 // indirect
 	github.com/filecoin-project/test-vectors/schema v0.0.1
-	github.com/filecoin-project/statediff v0.0.1
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-beta.1
 	github.com/go-kit/kit v0.10.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
@@ -129,11 +129,17 @@ require (
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gotest.tools v2.2.0+incompatible
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
+	github.com/filecoin-project/fil-blst v0.0.0
 )
 
 replace github.com/golangci/golangci-lint => github.com/golangci/golangci-lint v1.18.0
+
 replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
+
 replace github.com/supranational/blst => ./extern/fil-blst/blst
+
 replace github.com/filecoin-project/go-storedcounter => ./extern/go-storedcounter
+
 replace github.com/filecoin-project/fil-blst => ./extern/fil-blst
+
 replace github.com/filecoin-project/specs-actors => ./extern/specs-actors
