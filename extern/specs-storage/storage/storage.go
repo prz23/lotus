@@ -7,7 +7,9 @@ import (
 
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
+	proof0 "github.com/filecoin-project/specs-actors/actors/runtime/proof"
+
 )
 
 type Data = io.Reader
@@ -21,15 +23,15 @@ type Storage interface {
 }
 
 type Prover interface {
-	GenerateWinningPoSt(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) ([]abi.PoStProof, error)
-	GenerateWindowPoSt(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
+	GenerateWinningPoSt(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo, randomness abi.PoStRandomness) ([]proof0.PoStProof, error)
+	GenerateWindowPoSt(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo, randomness abi.PoStRandomness) (proof []proof0.PoStProof, skipped []abi.SectorID, err error)
 }
 
 type ProverPlus interface {
 	Prover
-	GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
-	GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
-	GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error)
+	GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo, randomness abi.PoStRandomness) (proof []proof0.PoStProof, skipped []abi.SectorID, err error)
+	GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []proof0.PoStProof, skipped []abi.SectorID, err error)
+	GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo,randomness abi.PoStRandomness, proofs []proof0.PoStProof,index []ffi.SectorIndexInfo) (proof []proof0.PoStProof, skipped []abi.SectorID, err error)
 }
 
 type PreCommit1Out []byte
