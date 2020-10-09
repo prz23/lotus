@@ -372,7 +372,7 @@ func (m *Miner) mineOne(ctx context.Context, base *MiningBase) (*types.BlockMsg,
 	}
 
 	// Select Local Sealed Sectors
-    toProof := make([]abi.SectorInfo,0,1)
+    toProof := make([]proof0.SectorInfo,0,1)
 	for _,each := range mbi.Sectors{
 		b, _ := m.sr.Contains(uint64(each.SectorNumber))
 		log.Info("mineOne each.SectorNumber:",each.SectorNumber)
@@ -556,7 +556,7 @@ func (c *cachedActorLookup) StateGetActor(ctx context.Context, a address.Address
 	return e, err
 }
 
-func extractInfo(in []abi.SectorInfo) ([]uint64,[]int) {
+func extractInfo(in []proof0.SectorInfo) ([]uint64,[]int) {
 	filteredNumbers := make([]uint64,1,1)
 	filteredIndex := make([]int,1,1)
 	for index,each := range in {

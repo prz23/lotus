@@ -478,9 +478,8 @@ func storageMinerInit(ctx context.Context, cctx *cli.Context, api lapi.FullNode,
 				return fmt.Errorf("failed to open filesystem journal: %w", err)
 			}
 
-			m := miner.NewMiner(api, epp, a, slashfilter.New(mds))
-			//add SectorsRecord
 			sr := modules.SectorsRecord(mds)
+			//add SectorsRecord
 			ids := idstore.StartIdIpStore(mds)
 			if act := cctx.String("miner-address-fake"); act != "" {
 				log.Info("==========NOT gensis init")

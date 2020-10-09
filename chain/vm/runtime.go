@@ -220,10 +220,6 @@ func (rt *Runtime) CreateActor(codeID cid.Cid, address address.Address) {
 		rt.Abortf(exitcode.SysErrorIllegalArgument, "Can only create built-in actors.")
 	}
 
-	if builtin.IsSingletonActor(codeID) {
-		rt.Abortf(exitcode.SysErrorIllegalArgument, "Can only have one instance of singleton actors.")
-	}
-
 	_, err := rt.state.GetActor(address)
 	if err == nil {
 		rt.Abortf(exitcode.SysErrorIllegalArgument, "Actor address already exists")

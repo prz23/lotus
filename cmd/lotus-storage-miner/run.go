@@ -94,10 +94,6 @@ var runCmd = &cli.Command{
 		if v.APIVersion != build.FullAPIVersion {
 			return xerrors.Errorf("lotus-daemon API version doesn't match: expected: %s", api.Version{APIVersion: build.FullAPIVersion})
         }
-
-	    if v.APIVersion != build.APIVersion {
-			return xerrors.Errorf("lotus-daemon API version doesn't match: local: %s", api.Version{APIVersion: build.APIVersion})
-		}
 		
 		var RpcAddressForLocal rpctypes.LocalServerAddr
 		var RpcAddressForUM rpctypes.RemoteServerAddr

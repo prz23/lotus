@@ -5,10 +5,14 @@
 package build
 
 import (
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/lotus/chain/actors/policy"
+"math"
+"os"
 
-	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
+"github.com/filecoin-project/go-address"
+"github.com/filecoin-project/go-state-types/abi"
+"github.com/filecoin-project/lotus/chain/actors/policy"
+
+builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 )
 
 var DrandSchedule = map[abi.ChainEpoch]DrandEnum{
@@ -22,6 +26,9 @@ const BreezeGasTampingDuration = 120
 const UpgradeSmokeHeight = 51000
 
 const UpgradeIgnitionHeight = 94000
+const UpgradeRefuelHeight = 130800
+
+var UpgradeActorsV2Height = abi.ChainEpoch(138720)
 
 // This signals our tentative epoch for mainnet launch. Can make it later, but not earlier.
 // Miners, clients, developers, custodians all need time to prepare.
@@ -29,14 +36,21 @@ const UpgradeIgnitionHeight = 94000
 const UpgradeLiftoffHeight = 148888
 
 func init() {
-	power.ConsensusMinerMinPower = big.NewInt(10 << 1)
-	miner.SupportedProofTypes = map[abi.RegisteredSealProof]struct{}{
-		abi.RegisteredSealProof_StackedDrg8MiBV1: {},
-		abi.RegisteredSealProof_StackedDrg512MiBV1: {},
-		abi.RegisteredSealProof_StackedDrg32GiBV1: {},
-		abi.RegisteredSealProof_StackedDrg64GiBV1: {},
-	Devnet = false
+	policy.SetConsensusMinerMinPower(abi.NewStoragePower(10 << 40))
+	policy.SetSupportedProofTypes(
+		abi.RegisteredSealProof_StackedDrg32GiBV1,
+		abi.RegisteredSealProof_StackedDrg64GiBV1,
+	)
+
+	if os.Getenv("LOTUS_USE_TEST_ADDRESSES") != "1" {
+		SetAddressNetwork(address.Mainnet)
 	}
+
+	if os.Getenv("LOTUS_DISABLE_V2_ACTOR_MIGRATION") == "1" {
+		UpgradeActorsV2Height = math.MaxInt64
+	}
+
+	Devnet = false
 }
 
 const BlockDelaySecs = uint64(builtin0.EpochDurationSeconds)

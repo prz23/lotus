@@ -8,7 +8,6 @@ import (
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 	idstore "github.com/filecoin-project/lotus/extern/sector-id-store"
 	filter "github.com/filecoin-project/lotus/extern/winsector-filter"
-	cid "github.com/ipfs/go-cid/_rsrch/cidiface"
 	"net/http"
 	"time"
 

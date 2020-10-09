@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
+	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
 
 	"github.com/filecoin-project/go-state-types/network"
 
@@ -259,7 +260,7 @@ func (s SealingAPIAdapter) StateNetworkVersion(ctx context.Context, tok sealing.
 	return s.delegate.StateNetworkVersion(ctx, tsk)
 }
 
-func (s SealingAPIAdapter) SendMsg(ctx context.Context, from, to address.Address, method abi.MethodNum, value, maxFee abi.TokenAmount, params []byte) (cid.Cid, error) {
+func (s SealingAPIAdapter) SendMsg(ctx context.Context, from, to address.Address, method abi.MethodNum, value, maxFee abi.TokenAmount, params []byte, secnum abi.SectorNumber) (cid.Cid, error) {
 	msg := types.Message{
 		To:     to,
 		From:   from,
