@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	_ "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/filecoin-project/lotus/extern/miningstate/rpcclient"
@@ -17,12 +18,13 @@ import (
 	sectorstorage "github.com/filecoin-project/lotus/extern/sector-storage"
 	sealing "github.com/filecoin-project/lotus/extern/storage-sealing"
 	"github.com/filecoin-project/lotus/node/modules/dtypes"
-	"github.com/filecoin-project/specs-actors/actors/abi"
 	"go.uber.org/fx"
 	"log"
 	"net"
 	"net/http"
 	"net/rpc"
+	proof0 "github.com/filecoin-project/specs-actors/actors/runtime/proof"
+
 )
 
 // VanillaProof
@@ -35,9 +37,9 @@ func (sb *WindowPoSt) DoVanillaProof(req rpcclient.WindowPoStRequest, res *rpccl
 
 	minerid := abi.ActorID(req.MinerID)
 
-	var sectorinfos []abi.SectorInfo
+	var sectorinfos []proof0.SectorInfo
 	for _,sinfo := range req.SectorInfo{
-		var v abi.SectorInfo
+		var v proof0.SectorInfo
 		if err := v.UnmarshalCBOR(bytes.NewBuffer(sinfo)); err != nil {
 			return err
 		}
