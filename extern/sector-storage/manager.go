@@ -22,6 +22,8 @@ import (
 	"github.com/filecoin-project/lotus/extern/sector-storage/sealtasks"
 	"github.com/filecoin-project/lotus/extern/sector-storage/stores"
 	"github.com/filecoin-project/lotus/extern/sector-storage/storiface"
+	proof0 "github.com/filecoin-project/specs-actors/actors/runtime/proof"
+
 )
 
 var log = logging.Logger("advmgr")
@@ -523,13 +525,13 @@ func (m *Manager) Close(ctx context.Context) error {
 var _ SectorManager = &Manager{}
 
 
-func (m *Manager)GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+func (m *Manager)GenerateWindowPoStPlus(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo, randomness abi.PoStRandomness) (proof []proof0.PoStProof, skipped []abi.SectorID, err error){
     log.Info("GenerateWindowPoStPlus")
 	return m.ProverPlus.GenerateWindowPoStPlus(ctx,minerID,sectorInfo,randomness)
 }
-func (m *Manager)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+func (m *Manager)GenerateWindowPoStVanilla(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo, randomness abi.PoStRandomness, index ffi.SectorIndexInfo) (proof []proof0.PoStProof, skipped []abi.SectorID, err error){
 	return m.ProverPlus.GenerateWindowPoStVanilla(ctx,minerID,sectorInfo,randomness,index)
 }
-func (m *Manager)GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []abi.SectorInfo,randomness abi.PoStRandomness, proofs []abi.PoStProof,index []ffi.SectorIndexInfo) (proof []abi.PoStProof, skipped []abi.SectorID, err error){
+func (m *Manager)GenerateWindowPoStSnark(ctx context.Context, minerID abi.ActorID, sectorInfo []proof0.SectorInfo,randomness abi.PoStRandomness, proofs []proof0.PoStProof,index []ffi.SectorIndexInfo) (proof []proof0.PoStProof, skipped []abi.SectorID, err error){
 	return m.ProverPlus.GenerateWindowPoStSnark(ctx,minerID,sectorInfo,randomness,proofs,index)
 }
