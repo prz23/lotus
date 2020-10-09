@@ -3,8 +3,8 @@ package miner
 import (
 	"sort"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 )
 
 // VestingFunds represents the vesting table state for the miner.
@@ -53,7 +53,7 @@ func (v *VestingFunds) addLockedFunds(currEpoch abi.ChainEpoch, vestingSum abi.T
 
 		targetVest := big.Zero() //nolint:ineffassign
 		if elapsed < spec.VestPeriod {
-			// Linear vesting, PARAM_FINISH
+			// Linear vesting
 			targetVest = big.Div(big.Mul(vestingSum, big.NewInt(int64(elapsed))), vestPeriod)
 		} else {
 			targetVest = vestingSum
